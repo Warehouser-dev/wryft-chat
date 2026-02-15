@@ -2,6 +2,8 @@
 
 A privacy-focused chat platform built with React and Rust.
 
+<img width="1920" height="907" alt="Screenshot 2026-02-15 at 13 27 14" src="https://github.com/user-attachments/assets/f1bfb022-2034-426b-8eaa-7587f0811483" />
+
 ## Features
 
 - Real-time messaging with WebSockets
@@ -18,7 +20,8 @@ A privacy-focused chat platform built with React and Rust.
 - React Router
 - Lucide React icons
 
-**Backend:**
+**Backend:** 
+
 - Rust + Axum
 - PostgreSQL
 - WebSockets
