@@ -5,14 +5,23 @@ function ServerSettings({ isOpen, onClose, server, onUpdate, onDelete }) {
   const [serverName, setServerName] = useState(server?.name || '');
   const [activeTab, setActiveTab] = useState('overview');
   const [saving, setSaving] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
   if (!isOpen || !server) return null;
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+      setIsClosing(false);
+    }, 200);
+  };
 
   const handleSave = async () => {
     setSaving(true);
     try {
       await onUpdate(serverName);
-      onClose();
+      handleClose();
     } catch (err) {
       console.error('Failed to update server:', err);
     } finally {
@@ -23,7 +32,7 @@ function ServerSettings({ isOpen, onClose, server, onUpdate, onDelete }) {
   const handleDelete = () => {
     if (confirm(`Are you sure you want to delete ${server.name}? This action cannot be undone!`)) {
       onDelete();
-      onClose();
+      handleClose();
     }
   };
 
@@ -33,7 +42,7 @@ function ServerSettings({ isOpen, onClose, server, onUpdate, onDelete }) {
   ];
 
   return (
-    <div className="settings-overlay" onClick={onClose}>
+    <div className={`settings-overlay ${isClosing ? 'closing' : ''}`} onClick={handleClose}>
       <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
         <div className="settings-sidebar">
           <div className="settings-tabs">
@@ -50,7 +59,7 @@ function ServerSettings({ isOpen, onClose, server, onUpdate, onDelete }) {
         </div>
 
         <div className="settings-content">
-          <button className="settings-close" onClick={onClose}>
+          <button className="settings-close" onClick={handleClose}>
             <X size={24} />
           </button>
 

@@ -1,7 +1,18 @@
 import { X, Crown, Calendar, Mail, MessageCircle } from 'lucide-react';
+import { useState } from 'react';
 
 function UserProfile({ user, isOpen, onClose, isOwner, onStartDM, canDM = true }) {
+  const [isClosing, setIsClosing] = useState(false);
+
   if (!isOpen || !user) return null;
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+      setIsClosing(false);
+    }, 200);
+  };
 
   const joinDate = new Date(user.created_at || Date.now()).toLocaleDateString('en-US', {
     month: 'long',
@@ -10,9 +21,9 @@ function UserProfile({ user, isOpen, onClose, isOwner, onStartDM, canDM = true }
   });
 
   return (
-    <div className="profile-overlay" onClick={onClose}>
+    <div className={`profile-overlay ${isClosing ? 'closing' : ''}`} onClick={handleClose}>
       <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="profile-close" onClick={onClose}>
+        <button className="profile-close" onClick={handleClose}>
           <X size={24} />
         </button>
 

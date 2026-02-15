@@ -1063,6 +1063,19 @@ body {
 .message-author {
   font-weight: 600;
   margin-right: 8px;
+  cursor: pointer;
+}
+
+.message-author:hover {
+  text-decoration: underline;
+}
+
+.message-avatar {
+  cursor: pointer;
+}
+
+.message-avatar:hover {
+  opacity: 0.8;
 }
 
 .message-timestamp {
@@ -1213,7 +1226,11 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  animation: fadeIn 0.15s ease-out;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.settings-overlay.closing {
+  animation: fadeOut 0.2s ease-out;
 }
 
 .settings-modal {
@@ -1225,7 +1242,11 @@ body {
   max-height: 740px;
   display: flex;
   overflow: hidden;
-  animation: scaleIn 0.15s ease-out;
+  animation: scaleIn 0.2s ease-out;
+}
+
+.settings-overlay.closing .settings-modal {
+  animation: scaleOut 0.2s ease-out;
 }
 
 .settings-sidebar {
@@ -1764,6 +1785,11 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 2000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.profile-overlay.closing {
+  animation: fadeOut 0.2s ease-out;
 }
 
 .profile-modal {
@@ -1773,6 +1799,11 @@ body {
   max-width: 600px;
   overflow: hidden;
   position: relative;
+  animation: scaleIn 0.2s ease-out;
+}
+
+.profile-overlay.closing .profile-modal {
+  animation: scaleOut 0.2s ease-out;
 }
 
 .profile-close {

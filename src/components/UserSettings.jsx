@@ -7,13 +7,22 @@ function UserSettings({ isOpen, onClose }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('account');
+  const [isClosing, setIsClosing] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+      setIsClosing(false);
+    }, 200);
+  };
 
   const handleLogout = () => {
     logout();
     navigate('/login');
-    onClose();
+    handleClose();
   };
 
   const tabs = [
@@ -24,7 +33,7 @@ function UserSettings({ isOpen, onClose }) {
   ];
 
   return (
-    <div className="settings-overlay" onClick={onClose}>
+    <div className={`settings-overlay ${isClosing ? 'closing' : ''}`} onClick={handleClose}>
       <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
         <div className="settings-sidebar">
           <div className="settings-tabs">
@@ -50,7 +59,7 @@ function UserSettings({ isOpen, onClose }) {
         </div>
 
         <div className="settings-content">
-          <button className="settings-close" onClick={onClose}>
+          <button className="settings-close" onClick={handleClose}>
             <X size={24} />
           </button>
 

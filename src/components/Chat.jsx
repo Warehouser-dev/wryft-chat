@@ -1,19 +1,23 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { Hash, User, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 import MessageInput from './MessageInput';
+import UserProfile from './UserProfile';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useAuth } from '../context/AuthContext';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 
 function Chat({ channel, messages, onSendMessage, loading, isDM, onReceiveMessage, onMessageUpdate, members = [], dmUsername }) {
   const { user } = useAuth();
   const { serverId } = useParams();
+  const navigate = useNavigate();
   const messagesEndRef = useRef(null);
   const [hoveredMessage, setHoveredMessage] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
   const [editText, setEditText] = useState('');
   const [typingUsers, setTypingUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showUserProfile, setShowUserProfile] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -152,6 +156,40 @@ function Chat({ channel, messages, onSendMessage, loading, isDM, onReceiveMessag
     return isOwn;
   };
 
+  const handleUserClick = (message) => {
+    // Find the full user object from members
+    const clickedUser = members.find(m => 
+      m.username === message.author && 
+      String(m.discriminator) === String(message.author_discriminator)
+    );
+
+    if (clickedUser) {
+      setSelectedUser(clickedUser);
+      setShowUserProfile(true);
+    } else {
+      // If not in members list, create a basic user object
+      setSelectedUser({
+        id: message.author_id,
+        username: message.author,
+        discriminator: message.author_discriminator,
+        created_at: new Date().toISOString(),
+      });
+      setShowUserProfile(true);
+    }
+  };
+
+  const handleStartDM = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      const dm = await api.createDM(user.id, selectedUser.id);
+      setShowUserProfile(false);
+      navigate(`/channels/@me/${dm.id}`);
+    } catch (err) {
+      console.error('Failed to create DM:', err);
+    }
+  };
+
   const parseMentions = (text) => {
     // Match @username#1234 pattern
     const mentionRegex = /@(\w+)#(\d{4})/g;
@@ -199,12 +237,20 @@ function Chat({ channel, messages, onSendMessage, loading, isDM, onReceiveMessag
             onMouseEnter={() => setHoveredMessage(message.id)}
             onMouseLeave={() => setHoveredMessage(null)}
           >
-            <div className="message-avatar">
+            <div 
+              className="message-avatar clickable"
+              onClick={() => handleUserClick(message)}
+            >
               {message.author[0].toUpperCase()}
             </div>
             <div className="message-content">
               <div className="message-header">
-                <span className="message-author">{message.author}#{message.author_discriminator}</span>
+                <span 
+                  className="message-author clickable"
+                  onClick={() => handleUserClick(message)}
+                >
+                  {message.author}#{message.author_discriminator}
+                </span>
                 <span className="message-timestamp">{message.timestamp}</span>
                 {message.edited && <span className="message-edited">(edited)</span>}
               </div>
@@ -264,6 +310,15 @@ function Chat({ channel, messages, onSendMessage, loading, isDM, onReceiveMessag
         </div>
       )}
       <MessageInput onSendMessage={handleSendMessage} onTyping={handleTyping} channel={displayName} members={members} />
+      
+      <UserProfile
+        user={selectedUser}
+        isOpen={showUserProfile}
+        onClose={() => setShowUserProfile(false)}
+        isOwner={false}
+        onStartDM={handleStartDM}
+        canDM={!isDM && selectedUser?.id !== user?.id}
+      />
     </div>
   );
 }
