@@ -1,4 +1,4 @@
-# Wryft
+# Wryft - Discord Alternative.
 
 A privacy-focused chat platform built with React and Rust.
 
