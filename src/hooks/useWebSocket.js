@@ -4,6 +4,12 @@ export function useWebSocket(channel, username, onMessage) {
   const ws = useRef(null);
   const [isConnected, setIsConnected] = useState(false);
   const reconnectTimeout = useRef(null);
+  const onMessageRef = useRef(onMessage);
+
+  // Keep the callback ref up to date
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
 
   useEffect(() => {
     if (!channel || !username) return;
@@ -20,7 +26,7 @@ export function useWebSocket(channel, username, onMessage) {
       ws.current.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          onMessage(data);
+          onMessageRef.current(data);
         } catch (err) {
           console.error('Failed to parse WebSocket message:', err);
         }
@@ -52,7 +58,7 @@ export function useWebSocket(channel, username, onMessage) {
         ws.current.close();
       }
     };
-  }, [channel, username, onMessage]);
+  }, [channel, username]);
 
   const sendMessage = (message) => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {

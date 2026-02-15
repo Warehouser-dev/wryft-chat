@@ -83,11 +83,47 @@ function App() {
   }, [channelId]);
 
   useEffect(() => {
-    if (dmId) {
-      // Mock DM data - in production, fetch from backend
-      setActiveDM({ id: parseInt(dmId), username: `User${dmId}` });
+    if (dmId && user) {
+      loadDMData(dmId);
     }
-  }, [dmId]);
+  }, [dmId, user]);
+
+  const loadDMData = async (id) => {
+    try {
+      // Load DM messages
+      const dmMessages = await api.getDMMessages(user.id, id);
+      
+      // Set messages
+      const formattedMessages = dmMessages.map(m => ({
+        id: m.id,
+        text: m.text,
+        author: m.author,
+        author_discriminator: m.author_discriminator,
+        timestamp: m.created_at ? new Date(m.created_at).toLocaleTimeString() : '',
+        edited: !!m.edited_at,
+      }));
+      
+      setMessages(prev => ({
+        ...prev,
+        [`dm-${id}`]: formattedMessages,
+      }));
+
+      // Get the DM info to set the active DM with proper user info
+      const userDMs = await api.getUserDMs(user.id);
+      const currentDM = userDMs.find(dm => dm.id === id);
+      
+      if (currentDM) {
+        setActiveDM({
+          id: currentDM.id,
+          username: currentDM.other_user.username,
+          discriminator: currentDM.other_user.discriminator,
+          user_id: currentDM.other_user.id,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load DM:', err);
+    }
+  };
 
   useEffect(() => {
     if (user && activeChannel && activeServer && viewMode === 'server') {
@@ -96,11 +132,7 @@ function App() {
     }
   }, [activeChannel, user, activeServer, viewMode]);
 
-  useEffect(() => {
-    if (user && activeDM && viewMode === 'dm') {
-      loadMessages(`dm-${activeDM.id}`);
-    }
-  }, [activeDM, user, viewMode]);
+  // Removed duplicate DM message loading - loadDMData already handles this
 
   const loadMessages = async (channel) => {
     setLoading(true);
@@ -119,16 +151,24 @@ function App() {
 
   const addMessage = async (text) => {
     try {
-      const channelKey = viewMode === 'dm' ? `dm-${activeDM.id}` : `${activeServer}-${activeChannel}`;
-      // Just save to database, don't update state (WebSocket will handle that)
-      await api.sendMessage(
-        channelKey, 
-        text, 
-        user.username,
-        user.discriminator
-      );
+      if (viewMode === 'dm' && activeDM) {
+        // Send DM message
+        const savedMessage = await api.sendDMMessage(user.id, activeDM.id, text);
+        return savedMessage;
+      } else {
+        // Send server message
+        const channelKey = `${activeServer}-${activeChannel}`;
+        const savedMessage = await api.sendMessage(
+          channelKey, 
+          text, 
+          user.username,
+          user.discriminator
+        );
+        return savedMessage;
+      }
     } catch (err) {
       console.error('Failed to send message:', err);
+      return null;
     }
   };
 
@@ -141,7 +181,7 @@ function App() {
       text: wsMessage.content,
       author: wsMessage.author.split('#')[0],
       author_discriminator: wsMessage.author.split('#')[1],
-      timestamp: new Date(wsMessage.timestamp).toLocaleTimeString(),
+      timestamp: wsMessage.timestamp || new Date().toLocaleTimeString(),
     };
 
     setMessages(prev => {
@@ -154,6 +194,34 @@ function App() {
         ...prev,
         [channelKey]: [...existing, message],
       };
+    });
+  };
+
+  const handleMessageUpdate = (wsMessage) => {
+    const channelKey = viewMode === 'dm' ? `dm-${activeDM?.id}` : `${activeServer}-${activeChannel}`;
+    
+    setMessages(prev => {
+      const existing = prev[channelKey] || [];
+      
+      if (wsMessage.deleted) {
+        // Remove deleted message
+        return {
+          ...prev,
+          [channelKey]: existing.filter(m => m.id !== wsMessage.id),
+        };
+      } else if (wsMessage.edited) {
+        // Update edited message
+        return {
+          ...prev,
+          [channelKey]: existing.map(m => 
+            m.id === wsMessage.id 
+              ? { ...m, text: wsMessage.content, edited: true }
+              : m
+          ),
+        };
+      }
+      
+      return prev;
     });
   };
 
@@ -218,6 +286,27 @@ function App() {
     }
   };
 
+  const handleUpdateServer = async (newName) => {
+    try {
+      const updated = await api.updateGuild(activeServer, newName);
+      setServers(servers.map(s => s.id === activeServer ? updated : s));
+      setCurrentGuild(updated);
+    } catch (err) {
+      console.error('Failed to update server:', err);
+      throw err;
+    }
+  };
+
+  const handleDeleteServer = async () => {
+    try {
+      await api.deleteGuild(activeServer);
+      setServers(servers.filter(s => s.id !== activeServer));
+      navigate('/channels/@me');
+    } catch (err) {
+      console.error('Failed to delete server:', err);
+    }
+  };
+
   const handleDMSelect = (dm) => {
     setActiveDM(dm);
     navigate(`/channels/@me/${dm.id}`);
@@ -259,12 +348,15 @@ function App() {
           />
           {activeDM ? (
             <Chat 
-              channel={activeDM.username}
+              channel={activeDM.id}
               messages={messages[`dm-${activeDM.id}`] || []} 
               onSendMessage={addMessage}
               onReceiveMessage={handleReceiveMessage}
+              onMessageUpdate={handleMessageUpdate}
               loading={loading}
               isDM={true}
+              members={[]}
+              dmUsername={activeDM.username}
             />
           ) : (
             <EmptyState isDMView={true} />
@@ -274,6 +366,7 @@ function App() {
         <>
           <Sidebar 
             serverName={currentGuild?.name || 'Server'}
+            serverId={activeServer}
             channels={channels}
             activeChannel={activeChannel} 
             setActiveChannel={handleChannelSelect}
@@ -281,6 +374,8 @@ function App() {
             onDeleteChannel={handleDeleteChannel}
             onCreateInvite={handleCreateInvite}
             onLeaveServer={handleLeaveServer}
+            onUpdateServer={handleUpdateServer}
+            onDeleteServer={handleDeleteServer}
             isOwner={currentGuild?.owner_id === user?.id}
             user={user}
           />
@@ -289,8 +384,10 @@ function App() {
             messages={messages[`${activeServer}-${activeChannel}`] || []} 
             onSendMessage={addMessage}
             onReceiveMessage={handleReceiveMessage}
+            onMessageUpdate={handleMessageUpdate}
             loading={loading}
             isDM={false}
+            members={members}
           />
           <MemberList 
             members={members}

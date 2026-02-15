@@ -1,15 +1,32 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, User } from 'lucide-react';
 import UserPanel from './UserPanel';
+import { api } from '../services/api';
 
 function DMSidebar({ activeDM, setActiveDM, user, onLogout }) {
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Empty DM list - users will add DMs as they chat
-  const [dms] = useState([]);
+  const [dms, setDms] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.id) {
+      loadDMs();
+    }
+  }, [user]);
+
+  const loadDMs = async () => {
+    try {
+      const userDMs = await api.getUserDMs(user.id);
+      setDms(userDMs);
+    } catch (err) {
+      console.error('Failed to load DMs:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredDMs = dms.filter(dm => 
-    dm.username.toLowerCase().includes(searchQuery.toLowerCase())
+    dm.other_user.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -30,14 +47,17 @@ function DMSidebar({ activeDM, setActiveDM, user, onLogout }) {
       <div className="dm-list">
         <div className="dm-section-header">
           <span>Direct Messages</span>
-          <button className="dm-add-button" title="Create DM">
-            <Plus size={16} />
-          </button>
         </div>
 
-        {filteredDMs.length === 0 && (
+        {loading && (
           <div style={{ padding: '20px', textAlign: 'center', color: '#72767d', fontSize: '14px' }}>
-            No direct messages yet
+            Loading...
+          </div>
+        )}
+
+        {!loading && filteredDMs.length === 0 && (
+          <div style={{ padding: '20px', textAlign: 'center', color: '#72767d', fontSize: '14px' }}>
+            No direct messages yet. Click on a member in a server to start chatting!
           </div>
         )}
 
@@ -45,15 +65,20 @@ function DMSidebar({ activeDM, setActiveDM, user, onLogout }) {
           <div
             key={dm.id}
             className={`dm-item ${activeDM?.id === dm.id ? 'active' : ''}`}
-            onClick={() => setActiveDM(dm)}
+            onClick={() => setActiveDM({
+              id: dm.id,
+              username: dm.other_user.username,
+              discriminator: dm.other_user.discriminator,
+              user_id: dm.other_user.id,
+            })}
           >
             <div className="dm-avatar">
-              <User size={20} />
-              <span className={`status-indicator ${dm.status}`} />
+              {dm.other_user.username[0].toUpperCase()}
             </div>
             <div className="dm-info">
-              <div className="dm-username">{dm.username}#{dm.discriminator}</div>
-              <div className="dm-last-message">{dm.lastMessage}</div>
+              <div className="dm-username">
+                {dm.other_user.username}#{dm.other_user.discriminator}
+              </div>
             </div>
           </div>
         ))}

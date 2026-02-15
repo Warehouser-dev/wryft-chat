@@ -100,6 +100,38 @@ export const api = {
     return response.json();
   },
 
+  async updateGuild(guildId, name) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/guilds/${guildId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ name }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to update guild');
+    }
+    
+    return response.json();
+  },
+
+  async deleteGuild(guildId) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/guilds/${guildId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to delete guild');
+    }
+  },
+
   async getGuildMembers(guildId) {
     const token = localStorage.getItem('token');
     const response = await fetch(`${API_URL}/guilds/${guildId}/members`, {
@@ -222,6 +254,130 @@ export const api = {
     
     if (!response.ok) {
       throw new Error('Failed to leave guild');
+    }
+  },
+
+  async editMessage(channel, messageId, text) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/messages/${channel}/${messageId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ text }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to edit message');
+    }
+  },
+
+  async deleteMessage(channel, messageId) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/messages/${channel}/${messageId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to delete message');
+    }
+  },
+
+  // DM APIs
+  async getUserDMs(userId) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/dms/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch DMs');
+    }
+    
+    return response.json();
+  },
+
+  async getOrCreateDM(currentUserId, otherUserId) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/dms/${currentUserId}/${otherUserId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to get/create DM');
+    }
+    
+    return response.json();
+  },
+
+  async getDMMessages(userId, dmId) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/dms/${userId}/${dmId}/messages`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch DM messages');
+    }
+    
+    return response.json();
+  },
+
+  async sendDMMessage(userId, dmId, text) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/dms/${userId}/${dmId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ text }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to send DM');
+    }
+    
+    return response.json();
+  },
+
+  async editDMMessage(userId, dmId, messageId, text) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/dms/${userId}/${dmId}/messages/${messageId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ text }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to edit DM');
+    }
+  },
+
+  async deleteDMMessage(userId, dmId, messageId) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/dms/${userId}/${dmId}/messages/${messageId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to delete DM');
     }
   },
 

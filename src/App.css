@@ -1028,6 +1028,7 @@ body {
   display: flex;
   padding: 8px 0;
   margin-bottom: 8px;
+  position: relative;
 }
 
 .message:hover {
@@ -1069,14 +1070,116 @@ body {
   color: #72767d;
 }
 
+.message-edited {
+  font-size: 10px;
+  color: #72767d;
+  margin-left: 4px;
+}
+
 .message-text {
   color: #dcddde;
   line-height: 1.4;
 }
 
+.message-actions {
+  position: absolute;
+  top: -12px;
+  right: 16px;
+  display: flex;
+  gap: 4px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.message-action-btn {
+  background: transparent;
+  border: none;
+  color: #b9bbbe;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.message-action-btn:hover {
+  background: #2a2a2a;
+  color: #dcddde;
+}
+
+.message-edit-form {
+  margin-top: 4px;
+}
+
+.message-edit-input {
+  width: 100%;
+  background: #0a0a0a;
+  border: 1px solid #dc2626;
+  border-radius: 4px;
+  padding: 8px;
+  color: #dcddde;
+  font-size: 14px;
+  font-family: inherit;
+  margin-bottom: 8px;
+}
+
+.message-edit-input:focus {
+  outline: none;
+  border-color: #b91c1c;
+}
+
+.message-edit-actions {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.btn-save,
+.btn-cancel {
+  padding: 4px 12px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+
+.btn-save {
+  background: #dc2626;
+  color: white;
+}
+
+.btn-save:hover {
+  background: #b91c1c;
+}
+
+.btn-cancel {
+  background: transparent;
+  color: #dcddde;
+}
+
+.btn-cancel:hover {
+  text-decoration: underline;
+}
+
 /* Message Input */
+.typing-indicator {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: #b5bac1;
+  font-style: italic;
+  background: #1a1a1a;
+  border-top: 1px solid #222;
+}
+
 .message-input-container {
   padding: 16px;
+  position: relative;
 }
 
 .message-input {
@@ -1819,6 +1922,28 @@ body {
   margin-top: 16px;
 }
 
+.profile-message-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: background 0.15s;
+}
+
+.profile-message-btn:hover {
+  background: #b91c1c;
+}
+
 /* Invite Modal */
 .invite-link-container {
   display: flex;
@@ -2006,4 +2131,237 @@ body {
   font-weight: 700;
   color: white;
   margin: 0 auto 24px;
+}
+
+/* Server Settings */
+.server-settings-icon {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: #dc2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: 700;
+  color: white;
+  margin: 0 auto;
+}
+
+.settings-save-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 16px;
+}
+
+.settings-save-button:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.settings-save-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-danger-zone {
+  background: rgba(240, 71, 71, 0.1);
+  border: 1px solid rgba(240, 71, 71, 0.3);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.danger-zone-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.danger-zone-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #f04747;
+  margin-bottom: 4px;
+}
+
+.danger-zone-description {
+  font-size: 14px;
+  color: #b9bbbe;
+}
+
+.danger-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #f04747;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.danger-button:hover {
+  background: #d83c3c;
+}
+
+.settings-tab.danger {
+  color: #f04747;
+}
+
+.settings-tab.danger:hover {
+  background: rgba(240, 71, 71, 0.1);
+}
+
+.settings-tab.danger.active {
+  background: rgba(240, 71, 71, 0.1);
+  color: #f04747;
+}
+
+/* Mention Autocomplete */
+.mention-autocomplete {
+  position: absolute;
+  bottom: 100%;
+  left: 16px;
+  right: 16px;
+  background: #0a0a0a;
+  border-radius: 8px;
+  box-shadow: 0 -8px 16px rgba(0, 0, 0, 0.4);
+  margin-bottom: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.mention-section-header {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: #0a0a0a;
+  border-top: 1px solid #1a1a1a;
+}
+
+.mention-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.mention-item:hover,
+.mention-item.selected {
+  background: #dc2626;
+}
+
+.mention-item.special {
+  background: rgba(220, 38, 38, 0.05);
+}
+
+.mention-item.special:hover,
+.mention-item.special.selected {
+  background: #dc2626;
+}
+
+.mention-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #dc2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
+}
+
+.mention-avatar.special {
+  background: #dc2626;
+  font-size: 18px;
+}
+
+.mention-item.selected .mention-avatar {
+  background: #b91c1c;
+}
+
+.mention-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mention-username {
+  font-size: 14px;
+  font-weight: 500;
+  color: #dcddde;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mention-badge {
+  background: #dc2626;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.mention-item.selected .mention-badge {
+  background: #b91c1c;
+}
+
+.mention-description {
+  color: #aaa;
+  font-size: 12px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mention-discriminator {
+  font-size: 12px;
+  color: #888;
+}
+
+/* Mention Highlighting in Messages */
+.message-text .mention {
+  background: rgba(220, 38, 38, 0.2);
+  color: #dc2626;
+  padding: 0 2px;
+  border-radius: 3px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.message-text .mention:hover {
+  background: rgba(220, 38, 38, 0.3);
 }

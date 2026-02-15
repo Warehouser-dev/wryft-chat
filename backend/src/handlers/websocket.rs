@@ -48,6 +48,22 @@ pub enum WsMessage {
         author: String,
         timestamp: String,
     },
+    #[serde(rename = "message_edited")]
+    MessageEdited {
+        id: String,
+        channel: String,
+        content: String,
+    },
+    #[serde(rename = "message_deleted")]
+    MessageDeleted {
+        id: String,
+        channel: String,
+    },
+    #[serde(rename = "typing")]
+    Typing {
+        channel: String,
+        user: String,
+    },
     #[serde(rename = "user_joined")]
     UserJoined { user: String },
     #[serde(rename = "user_left")]
@@ -89,8 +105,14 @@ async fn handle_socket(socket: WebSocket, state: AppState, channel: String, user
     let mut recv_task = tokio::spawn(async move {
         while let Some(Ok(Message::Text(text))) = receiver.next().await {
             if let Ok(ws_msg) = serde_json::from_str::<WsMessage>(&text) {
-                if let WsMessage::Message { .. } = ws_msg {
-                    let _ = tx_clone.send(text);
+                match ws_msg {
+                    WsMessage::Message { .. } | 
+                    WsMessage::MessageEdited { .. } | 
+                    WsMessage::MessageDeleted { .. } | 
+                    WsMessage::Typing { .. } => {
+                        let _ = tx_clone.send(text);
+                    }
+                    _ => {}
                 }
             }
         }

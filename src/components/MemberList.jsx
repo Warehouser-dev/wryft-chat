@@ -1,11 +1,27 @@
 import { Crown } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import UserProfile from './UserProfile';
+import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 function MemberList({ members, ownerId }) {
   const [selectedUser, setSelectedUser] = useState(null);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  
   const onlineMembers = members.filter(m => m.online);
   const offlineMembers = members.filter(m => !m.online);
+
+  const handleStartDM = async (member) => {
+    try {
+      const dm = await api.getOrCreateDM(user.id, member.id);
+      setSelectedUser(null);
+      navigate(`/channels/@me/${dm.id}`);
+    } catch (err) {
+      console.error('Failed to start DM:', err);
+    }
+  };
 
   const MemberItem = ({ member, isOwner }) => (
     <div className="member-item" onClick={() => setSelectedUser(member)}>
@@ -60,6 +76,8 @@ function MemberList({ members, ownerId }) {
         isOpen={!!selectedUser}
         onClose={() => setSelectedUser(null)}
         isOwner={selectedUser?.id === ownerId}
+        onStartDM={() => handleStartDM(selectedUser)}
+        canDM={selectedUser?.id !== user?.id}
       />
     </>
   );

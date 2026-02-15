@@ -1,6 +1,6 @@
-import { X, Crown, Calendar, Mail } from 'lucide-react';
+import { X, Crown, Calendar, Mail, MessageCircle } from 'lucide-react';
 
-function UserProfile({ user, isOpen, onClose, isOwner }) {
+function UserProfile({ user, isOpen, onClose, isOwner, onStartDM, canDM = true }) {
   if (!isOpen || !user) return null;
 
   const joinDate = new Date(user.created_at || Date.now()).toLocaleDateString('en-US', {
@@ -58,6 +58,13 @@ function UserProfile({ user, isOpen, onClose, isOwner }) {
                 <Crown size={14} />
                 Server Owner
               </div>
+            )}
+
+            {canDM && (
+              <button className="profile-message-btn" onClick={onStartDM}>
+                <MessageCircle size={16} />
+                Send Message
+              </button>
             )}
           </div>
         </div>

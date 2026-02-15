@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { UserPlus, ChevronDown, LogOut } from 'lucide-react';
+import { UserPlus, ChevronDown, LogOut, Settings } from 'lucide-react';
 import ChannelList from './ChannelList';
 import UserPanel from './UserPanel';
 import InviteModal from './InviteModal';
+import ServerSettings from './ServerSettings';
 
 function Sidebar({ 
-  serverName, 
+  serverName,
+  serverId,
   channels, 
   activeChannel, 
   setActiveChannel, 
@@ -13,12 +15,15 @@ function Sidebar({
   onDeleteChannel, 
   onCreateInvite,
   onLeaveServer,
+  onUpdateServer,
+  onDeleteServer,
   isOwner, 
   user 
 }) {
   const [showInvite, setShowInvite] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const handleInvite = async () => {
     const code = await onCreateInvite();
@@ -32,6 +37,11 @@ function Sidebar({
       onLeaveServer();
       setShowDropdown(false);
     }
+  };
+
+  const handleSettings = () => {
+    setShowSettings(true);
+    setShowDropdown(false);
   };
 
   return (
@@ -51,6 +61,15 @@ function Sidebar({
               <UserPlus size={16} />
               Invite People
             </button>
+            {isOwner && (
+              <>
+                <div className="server-dropdown-divider" />
+                <button className="server-dropdown-item" onClick={handleSettings}>
+                  <Settings size={16} />
+                  Server Settings
+                </button>
+              </>
+            )}
             {!isOwner && (
               <>
                 <div className="server-dropdown-divider" />
@@ -79,6 +98,14 @@ function Sidebar({
         onClose={() => setShowInvite(false)}
         inviteCode={inviteCode}
         serverName={serverName}
+      />
+
+      <ServerSettings
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        server={{ id: serverId, name: serverName, icon: serverName.slice(0, 2).toUpperCase() }}
+        onUpdate={onUpdateServer}
+        onDelete={onDeleteServer}
       />
     </div>
   );

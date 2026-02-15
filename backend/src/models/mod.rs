@@ -33,6 +33,8 @@ pub struct Message {
     pub author_discriminator: String,
     pub text: String,
     pub timestamp: String,
+    #[serde(default)]
+    pub edited: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -71,6 +73,11 @@ pub struct SendMessageRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct CreateGuildRequest {
+    pub name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateGuildRequest {
     pub name: String,
 }
 

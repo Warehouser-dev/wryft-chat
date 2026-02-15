@@ -153,3 +153,84 @@ pub async fn get_guild_members(
 
     Ok(Json(response))
 }
+
+pub async fn update_guild(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    axum::extract::Path(guild_id): axum::extract::Path<Uuid>,
+    Json(payload): Json<UpdateGuildRequest>,
+) -> Result<Json<GuildResponse>, StatusCode> {
+    let user_id = extract_user_id(&headers)?;
+    
+    // Check if user is owner
+    let guild = sqlx::query!(
+        "SELECT owner_id FROM guilds WHERE id = $1",
+        guild_id
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    if guild.owner_id != user_id {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    let icon = payload.name.chars().take(2).collect::<String>().to_uppercase();
+
+    sqlx::query!(
+        "UPDATE guilds SET name = $1, icon = $2 WHERE id = $3",
+        payload.name,
+        icon,
+        guild_id
+    )
+    .execute(&state.db)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let updated = sqlx::query!(
+        "SELECT id, name, owner_id, icon, created_at FROM guilds WHERE id = $1",
+        guild_id
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    Ok(Json(GuildResponse {
+        id: updated.id,
+        name: updated.name,
+        owner_id: updated.owner_id,
+        icon: updated.icon,
+        created_at: updated.created_at.map(|dt| dt.to_rfc3339()).unwrap_or_else(|| chrono::Utc::now().to_rfc3339()),
+    }))
+}
+
+pub async fn delete_guild(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    axum::extract::Path(guild_id): axum::extract::Path<Uuid>,
+) -> Result<StatusCode, StatusCode> {
+    let user_id = extract_user_id(&headers)?;
+    
+    // Check if user is owner
+    let guild = sqlx::query!(
+        "SELECT owner_id FROM guilds WHERE id = $1",
+        guild_id
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(|_| StatusCode::NOT_FOUND)?;
+
+    if guild.owner_id != user_id {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    sqlx::query!(
+        "DELETE FROM guilds WHERE id = $1",
+        guild_id
+    )
+    .execute(&state.db)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(StatusCode::NO_CONTENT)
+}

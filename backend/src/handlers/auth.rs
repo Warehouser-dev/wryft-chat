@@ -7,9 +7,9 @@ use uuid::Uuid;
 use crate::{models::*, AppState};
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Claims {
-    sub: String,
-    exp: usize,
+pub struct Claims {
+    pub sub: String,
+    pub exp: usize,
 }
 
 fn generate_discriminator(existing: &[(String, String)], username: &str) -> String {
