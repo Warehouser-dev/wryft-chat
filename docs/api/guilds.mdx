@@ -1,0 +1,221 @@
+---
+title: 'Guilds API'
+description: 'Manage servers, channels, and permissions'
+---
+
+## Get User Guilds
+
+Get all guilds the authenticated user is a member of.
+
+```http
+GET /api/guilds
+Authorization: Bearer TOKEN
+```
+
+### Response
+
+```json
+[
+  {
+    "id": "guild-uuid",
+    "name": "My Server",
+    "icon": "https://...",
+    "owner_id": "user-uuid",
+    "member_count": 42,
+    "is_verified": false
+  }
+]
+```
+
+## Create Guild
+
+Create a new guild.
+
+```http
+POST /api/guilds
+Authorization: Bearer TOKEN
+```
+
+### Request Body
+
+```json
+{
+  "name": "My Server",
+  "icon": "https://...",
+  "is_public": false
+}
+```
+
+## Update Guild
+
+Update guild settings.
+
+```http
+PATCH /api/guilds/:guild_id
+Authorization: Bearer TOKEN
+```
+
+### Request Body
+
+```json
+{
+  "name": "Updated Name",
+  "icon": "https://...",
+  "banner": "https://..."
+}
+```
+
+## Delete Guild
+
+Delete a guild (owner only).
+
+```http
+DELETE /api/guilds/:guild_id
+Authorization: Bearer TOKEN
+```
+
+## Get Channels
+
+Get all channels in a guild.
+
+```http
+GET /api/guilds/:guild_id/channels
+Authorization: Bearer TOKEN
+```
+
+### Response
+
+```json
+[
+  {
+    "id": "channel-uuid",
+    "name": "general",
+    "type": "text",
+    "position": 0,
+    "category_id": null
+  }
+]
+```
+
+## Create Channel
+
+Create a new channel.
+
+```http
+POST /api/guilds/:guild_id/channels
+Authorization: Bearer TOKEN
+```
+
+### Request Body
+
+```json
+{
+  "name": "general",
+  "type": "text",
+  "category_id": null,
+  "position": 0
+}
+```
+
+## Delete Channel
+
+Delete a channel.
+
+```http
+DELETE /api/guilds/:guild_id/channels/:channel_id
+Authorization: Bearer TOKEN
+```
+
+## Get Members
+
+Get guild members.
+
+```http
+GET /api/guilds/:guild_id/members
+Authorization: Bearer TOKEN
+```
+
+## Create Invite
+
+Create an invite link.
+
+```http
+POST /api/guilds/:guild_id/invites
+Authorization: Bearer TOKEN
+```
+
+### Request Body
+
+```json
+{
+  "max_uses": 10,
+  "expires_at": "2024-12-31T23:59:59Z"
+}
+```
+
+### Response
+
+```json
+{
+  "code": "abc123",
+  "url": "https://wryft.chat/invite/abc123",
+  "max_uses": 10,
+  "uses": 0,
+  "expires_at": "2024-12-31T23:59:59Z"
+}
+```
+
+## Join Guild
+
+Join a guild via invite code.
+
+```http
+POST /api/invites/:code/join
+Authorization: Bearer TOKEN
+```
+
+## Leave Guild
+
+Leave a guild.
+
+```http
+POST /api/guilds/:guild_id/leave
+Authorization: Bearer TOKEN
+```
+
+## Permissions
+
+### Get Channel Permissions
+
+```http
+GET /api/guilds/:guild_id/channels/:channel_id/permissions
+Authorization: Bearer TOKEN
+```
+
+### Create Permission Override
+
+```http
+POST /api/guilds/:guild_id/channels/:channel_id/permissions
+Authorization: Bearer TOKEN
+```
+
+### Request Body
+
+```json
+{
+  "role_id": "role-uuid",
+  "allow": ["VIEW_CHANNEL", "SEND_MESSAGES"],
+  "deny": ["MANAGE_MESSAGES"]
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Messages API" icon="message" href="/api/messages">
+    Send and receive messages
+  </Card>
+  <Card title="Users API" icon="user" href="/api/users">
+    User profiles and settings
+  </Card>
+</CardGroup>

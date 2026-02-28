@@ -1,0 +1,253 @@
+---
+title: 'Users API'
+description: 'Manage user profiles, avatars, and settings'
+---
+
+## Get User Profile
+
+Get a user's public profile.
+
+```http
+GET /api/users/:user_id
+```
+
+### Response
+
+```json
+{
+  "id": "user-uuid",
+  "username": "user123",
+  "discriminator": "1234",
+  "avatar": "https://...",
+  "banner": "https://...",
+  "bio": "Hello world!",
+  "is_premium": false,
+  "created_at": "2024-01-01T00:00:00Z",
+  "custom_status": {
+    "text": "Playing games",
+    "emoji": "🎮",
+    "expires_at": null
+  }
+}
+```
+
+## Update Profile
+
+Update your own profile.
+
+```http
+PATCH /api/users/:user_id/profile
+Authorization: Bearer TOKEN
+```
+
+### Request Body
+
+```json
+{
+  "bio": "New bio",
+  "avatar": "https://...",
+  "banner": "https://...",
+  "pronouns": "they/them",
+  "timezone": "America/New_York"
+}
+```
+
+## Upload Avatar
+
+Upload a new avatar image.
+
+```http
+POST /api/upload/avatar
+Authorization: Bearer TOKEN
+Content-Type: multipart/form-data
+```
+
+### Form Data
+
+- `file` - Image file (max 5MB)
+
+### Response
+
+```json
+{
+  "url": "/api/files/file-uuid",
+  "file_id": "file-uuid"
+}
+```
+
+## Upload Banner
+
+Upload a profile banner.
+
+```http
+POST /api/upload/banner
+Authorization: Bearer TOKEN
+Content-Type: multipart/form-data
+```
+
+### Form Data
+
+- `file` - Image file (max 10MB)
+
+## Custom Status
+
+Update your custom status.
+
+```http
+PATCH /api/users/:user_id/status
+Authorization: Bearer TOKEN
+```
+
+### Request Body
+
+```json
+{
+  "text": "Playing games",
+  "emoji": "🎮",
+  "expires_at": "2024-01-02T00:00:00Z"
+}
+```
+
+Clear status:
+
+```json
+{
+  "text": null,
+  "emoji": null
+}
+```
+
+## Privacy Settings
+
+Update privacy settings.
+
+```http
+PATCH /api/users/:user_id/privacy
+Authorization: Bearer TOKEN
+```
+
+### Request Body
+
+```json
+{
+  "allow_friend_requests": true,
+  "allow_dms_from_non_friends": false,
+  "show_online_status": true
+}
+```
+
+## Get Mutual Guilds
+
+Get guilds shared with another user.
+
+```http
+GET /api/users/:current_user_id/mutual-guilds/:target_user_id
+Authorization: Bearer TOKEN
+```
+
+### Response
+
+```json
+[
+  {
+    "id": "guild-uuid",
+    "name": "Shared Server",
+    "icon": "https://..."
+  }
+]
+```
+
+## Get Mutual Friends
+
+Get friends shared with another user.
+
+```http
+GET /api/users/:current_user_id/mutual-friends/:target_user_id
+Authorization: Bearer TOKEN
+```
+
+## Presence
+
+Update your online status.
+
+```http
+POST /api/presence
+Authorization: Bearer TOKEN
+```
+
+### Request Body
+
+```json
+{
+  "status": "online",
+  "custom_status": "Playing games"
+}
+```
+
+### Status Values
+
+- `online` - Green dot
+- `idle` - Yellow dot
+- `dnd` - Red dot (Do Not Disturb)
+- `invisible` - Appear offline
+
+## Heartbeat
+
+Keep presence alive (send every 30 seconds).
+
+```http
+POST /api/presence/heartbeat
+Authorization: Bearer TOKEN
+```
+
+## Get User Presence
+
+Get another user's presence.
+
+```http
+GET /api/presence/:user_id
+```
+
+### Response
+
+```json
+{
+  "user_id": "user-uuid",
+  "status": "online",
+  "last_seen": "2024-01-01T00:00:00Z"
+}
+```
+
+## File Uploads
+
+All file uploads require authentication and are rate limited to 10 uploads per minute.
+
+### Upload Endpoints
+
+- `POST /api/upload/avatar` - Profile avatar (5MB max)
+- `POST /api/upload/banner` - Profile banner (10MB max)
+- `POST /api/upload/icon` - Guild icon (5MB max)
+- `POST /api/upload/emoji` - Custom emoji (256KB max)
+- `POST /api/upload/attachment` - Message attachment (25MB max)
+
+### File Access
+
+Files are served through authenticated endpoints:
+
+```http
+GET /api/files/:file_id
+```
+
+Public files (avatars, icons) are accessible without authentication.
+Private files (attachments) require authentication and permission checks.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/api/authentication">
+    JWT authentication
+  </Card>
+  <Card title="Messages API" icon="message" href="/api/messages">
+    Send messages
+  </Card>
+</CardGroup>

@@ -1,0 +1,124 @@
+---
+title: 'Premium Features'
+description: 'Unlock exclusive features with Wryft Premium'
+---
+
+## Overview
+
+Wryft Premium unlocks exclusive features and customization options.
+
+## Premium Benefits
+
+<CardGroup cols={2}>
+  <Card title="Custom Profiles" icon="user">
+    Profile banners and custom colors
+  </Card>
+  <Card title="Premium Badge" icon="star">
+    Show off your premium status
+  </Card>
+  <Card title="Custom Emoji" icon="face-smile">
+    Upload custom emoji to servers
+  </Card>
+  <Card title="Larger Uploads" icon="upload">
+    Upload files up to 100MB
+  </Card>
+  <Card title="HD Streaming" icon="video">
+    Stream in higher quality
+  </Card>
+  <Card title="Priority Support" icon="headset">
+    Get help faster
+  </Card>
+</CardGroup>
+
+## Pricing
+
+<Note>
+  Premium pricing and payment processing coming soon via Polar.sh
+</Note>
+
+## Premium Features
+
+### Profile Customization
+
+**Profile Banners**
+- Upload custom banner images
+- Animated banners (GIF support)
+- Banner positioning controls
+
+**Profile Colors**
+- Custom accent colors
+- Gradient backgrounds
+- Theme customization
+
+### Custom Emoji
+
+Upload custom emoji to your servers:
+- Up to 50 emoji per server (vs 10 for free)
+- Animated emoji support
+- Higher resolution (256x256 vs 128x128)
+
+### Larger File Uploads
+
+Increased upload limits:
+- Attachments: 100MB (vs 25MB)
+- Avatars: 10MB (vs 5MB)
+- Banners: 20MB (vs 10MB)
+
+### Premium Badge
+
+Show your premium status:
+- Gold badge on profile
+- Special badge in chat
+- Premium role color
+
+## Checking Premium Status
+
+```javascript
+GET /api/users/:user_id
+```
+
+Response includes:
+```json
+{
+  "id": "...",
+  "username": "user",
+  "is_premium": true,
+  "premium_since": "2024-01-01T00:00:00Z"
+}
+```
+
+## Premium API
+
+### Grant Premium
+
+```javascript
+POST /api/users/:user_id/premium
+{
+  "duration_days": 30
+}
+```
+
+### Check Premium Status
+
+```javascript
+GET /api/users/:user_id/premium
+```
+
+## Coming Soon
+
+- Server boosting
+- Custom server URLs
+- Advanced analytics
+- Priority voice quality
+- Custom themes
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="User Profiles" icon="user" href="/api/users">
+    Customize your profile
+  </Card>
+  <Card title="Custom Emoji" icon="face-smile" href="/features/servers">
+    Add emoji to servers
+  </Card>
+</CardGroup>

@@ -1,0 +1,172 @@
+---
+title: 'Friends System'
+description: 'Add friends, send DMs, and manage your social network'
+---
+
+## Overview
+
+Connect with other users through friend requests and direct messages.
+
+## Features
+
+<CardGroup cols={2}>
+  <Card title="Friend Requests" icon="user-plus">
+    Send and accept friend requests
+  </Card>
+  <Card title="Direct Messages" icon="envelope">
+    Private 1-on-1 conversations
+  </Card>
+  <Card title="Blocking" icon="ban">
+    Block unwanted users
+  </Card>
+  <Card title="Online Status" icon="circle">
+    See when friends are online
+  </Card>
+</CardGroup>
+
+## Friend Requests
+
+### Sending Requests
+
+Send a friend request by username:
+
+```javascript
+POST /api/friends/requests
+{
+  "username": "friend#1234"
+}
+```
+
+### Accepting Requests
+
+Accept incoming friend requests:
+
+```javascript
+POST /api/friends/requests/:friendship_id/accept
+```
+
+### Declining Requests
+
+Decline friend requests:
+
+```javascript
+POST /api/friends/requests/:friendship_id/decline
+```
+
+### View Pending Requests
+
+See incoming requests:
+
+```javascript
+GET /api/friends/requests/pending
+```
+
+See outgoing requests:
+
+```javascript
+GET /api/friends/requests/outgoing
+```
+
+## Friends List
+
+View all friends:
+
+```javascript
+GET /api/friends
+```
+
+Response includes:
+- Friend's profile
+- Online status
+- Last seen
+- Mutual servers
+
+## Direct Messages
+
+### Creating DMs
+
+Start a DM conversation:
+
+```javascript
+GET /api/dms/:current_user_id/:other_user_id
+```
+
+### Sending DMs
+
+Send a direct message:
+
+```javascript
+POST /api/dms/:user_id/:dm_id/messages
+{
+  "content": "Hey! How are you?"
+}
+```
+
+### DM Features
+
+- Real-time delivery
+- Typing indicators
+- Read receipts
+- File attachments
+- Message reactions
+
+## Blocking
+
+### Block a User
+
+```javascript
+POST /api/friends/block/:user_id
+```
+
+Blocked users:
+- Cannot send you friend requests
+- Cannot send you DMs
+- Cannot see your online status
+- Are removed from your friends list
+
+### Unblock a User
+
+```javascript
+DELETE /api/friends/block/:user_id
+```
+
+### View Blocked Users
+
+```javascript
+GET /api/friends/blocked
+```
+
+## Removing Friends
+
+Remove someone from your friends list:
+
+```javascript
+DELETE /api/friends/:friend_user_id
+```
+
+## Privacy Settings
+
+Control who can:
+- Send you friend requests
+- Send you DMs
+- See your online status
+
+```javascript
+PATCH /api/users/:user_id/privacy
+{
+  "allow_friend_requests": true,
+  "allow_dms_from_non_friends": false,
+  "show_online_status": true
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Messaging" icon="message" href="/features/messaging">
+    Learn about messaging features
+  </Card>
+  <Card title="User Profiles" icon="user" href="/api/users">
+    Customize your profile
+  </Card>
+</CardGroup>

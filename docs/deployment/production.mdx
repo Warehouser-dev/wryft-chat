@@ -1,0 +1,303 @@
+---
+title: 'Production Deployment'
+description: 'Deploy Wryft Chat to production with best practices'
+---
+
+## Production Checklist
+
+<Steps>
+  <Step title="Security">
+    - [ ] Change default passwords
+    - [ ] Enable HTTPS/SSL
+    - [ ] Set strong JWT secret
+    - [ ] Configure CORS properly
+    - [ ] Enable rate limiting
+    - [ ] Set up firewall rules
+  </Step>
+
+  <Step title="Performance">
+    - [ ] Enable Redis caching
+    - [ ] Configure connection pooling
+    - [ ] Set up CDN for static assets
+    - [ ] Enable gzip compression
+    - [ ] Optimize database indexes
+  </Step>
+
+  <Step title="Monitoring">
+    - [ ] Set up error tracking
+    - [ ] Configure logging
+    - [ ] Enable health checks
+    - [ ] Set up uptime monitoring
+    - [ ] Configure alerts
+  </Step>
+
+  <Step title="Backup">
+    - [ ] Automated database backups
+    - [ ] File storage backups
+    - [ ] Backup retention policy
+    - [ ] Test restore procedures
+  </Step>
+</Steps>
+
+## Security
+
+### HTTPS/SSL
+
+Use Let's Encrypt with Certbot:
+
+```bash
+# Install Certbot
+sudo apt install certbot python3-certbot-nginx
+
+# Get certificate
+sudo certbot --nginx -d your-domain.com
+```
+
+### Environment Variables
+
+<Warning>
+  Never commit `.env` files to version control!
+</Warning>
+
+Production environment variables:
+
+```env
+# Backend
+DATABASE_URL=postgresql://user:STRONG_PASSWORD@localhost/wryft
+JWT_SECRET=RANDOM_64_CHAR_STRING
+ALLOWED_ORIGINS=https://your-domain.com
+REDIS_URL=redis://:REDIS_PASSWORD@localhost:6379
+
+# MinIO
+S3_ACCESS_KEY=RANDOM_ACCESS_KEY
+S3_SECRET_KEY=RANDOM_SECRET_KEY
+```
+
+### CORS Configuration
+
+Restrict CORS to your domain:
+
+```env
+ALLOWED_ORIGINS=https://your-domain.com,https://www.your-domain.com
+```
+
+### Rate Limiting
+
+Enable rate limiting in production:
+
+```rust
+// Already configured in backend/src/main.rs
+// 100 requests per minute per IP
+```
+
+## Performance
+
+### Redis Caching
+
+Enable Redis for better performance:
+
+```env
+REDIS_URL=redis://localhost:6379
+```
+
+Caches:
+- User sessions
+- Guild data
+- Presence information
+
+### Database Optimization
+
+Create indexes for common queries:
+
+```sql
+CREATE INDEX idx_messages_channel ON messages(channel_id, created_at DESC);
+CREATE INDEX idx_guild_members ON guild_members(guild_id, user_id);
+CREATE INDEX idx_friendships ON friendships(user_id, status);
+```
+
+### Connection Pooling
+
+Configure in `backend/.env`:
+
+```env
+DATABASE_MAX_CONNECTIONS=20
+DATABASE_MIN_CONNECTIONS=5
+```
+
+### CDN Setup
+
+Use a CDN for static assets:
+- Cloudflare
+- AWS CloudFront
+- Fastly
+
+## Monitoring
+
+### Error Tracking
+
+Integrate Sentry:
+
+```rust
+// Add to Cargo.toml
+sentry = "0.31"
+
+// Initialize in main.rs
+let _guard = sentry::init("YOUR_DSN");
+```
+
+### Logging
+
+Configure structured logging:
+
+```rust
+// Already using tracing in backend
+RUST_LOG=info
+```
+
+### Health Checks
+
+Monitor endpoints:
+- `GET /api/health` - API health
+- Database connectivity
+- Redis connectivity
+- MinIO connectivity
+
+### Uptime Monitoring
+
+Use services like:
+- UptimeRobot
+- Pingdom
+- StatusCake
+
+## Backup Strategy
+
+### Automated Database Backups
+
+```bash
+# Daily backup cron job
+0 2 * * * pg_dump -U postgres wryft | gzip > /backups/wryft-$(date +\%Y\%m\%d).sql.gz
+```
+
+### Backup Retention
+
+- Daily backups: Keep 7 days
+- Weekly backups: Keep 4 weeks
+- Monthly backups: Keep 12 months
+
+### MinIO Backups
+
+```bash
+# Sync to S3
+mc mirror minio/wryft s3/wryft-backup
+```
+
+## Scaling
+
+### Vertical Scaling
+
+Increase server resources:
+- 4+ CPU cores
+- 8+ GB RAM
+- SSD storage
+
+### Horizontal Scaling
+
+Run multiple backend instances:
+
+```yaml
+# docker-compose.yml
+services:
+  backend:
+    deploy:
+      replicas: 3
+```
+
+Add load balancer (nginx/HAProxy).
+
+### Database Scaling
+
+- Read replicas for queries
+- Connection pooling
+- Query optimization
+
+## Deployment Platforms
+
+### VPS (DigitalOcean, Linode, Vultr)
+
+```bash
+# Install Docker
+curl -fsSL https://get.docker.com | sh
+
+# Deploy
+git clone your-repo
+cd wryft-chat
+docker-compose up -d
+```
+
+### AWS
+
+- EC2 for compute
+- RDS for PostgreSQL
+- S3 for file storage
+- ElastiCache for Redis
+
+### Kubernetes
+
+Use provided Kubernetes manifests (coming soon).
+
+## Maintenance
+
+### Updates
+
+```bash
+# Pull latest code
+git pull
+
+# Rebuild and restart
+docker-compose build
+docker-compose up -d
+
+# Run new migrations
+docker-compose exec backend psql -d wryft -f /app/migrations/*.sql
+```
+
+### Database Migrations
+
+Always backup before migrations:
+
+```bash
+pg_dump wryft > backup-before-migration.sql
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="High memory usage">
+    - Check for memory leaks
+    - Increase swap space
+    - Scale horizontally
+  </Accordion>
+  
+  <Accordion title="Slow queries">
+    - Add database indexes
+    - Enable query logging
+    - Optimize N+1 queries
+  </Accordion>
+  
+  <Accordion title="WebSocket disconnects">
+    - Check nginx timeout settings
+    - Verify firewall rules
+    - Enable keepalive
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Environment Variables" icon="gear" href="/deployment/environment">
+    Full configuration reference
+  </Card>
+  <Card title="Docker Deployment" icon="docker" href="/deployment/docker">
+    Docker setup guide
+  </Card>
+</CardGroup>

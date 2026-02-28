@@ -1,0 +1,166 @@
+---
+title: 'Installation'
+description: 'Detailed installation guide for Wryft Chat'
+---
+
+## System Requirements
+
+- **OS**: Linux, macOS, or Windows (WSL2)
+- **RAM**: 2GB minimum, 4GB recommended
+- **Storage**: 1GB for application + database storage
+
+## Install Dependencies
+
+<Tabs>
+  <Tab title="macOS">
+    ```bash
+    # Install Homebrew
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    
+    # Install dependencies
+    brew install node rust postgresql
+    ```
+  </Tab>
+  
+  <Tab title="Ubuntu/Debian">
+    ```bash
+    # Update packages
+    sudo apt update
+    
+    # Install Node.js
+    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+    sudo apt install -y nodejs
+    
+    # Install Rust
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    
+    # Install PostgreSQL
+    sudo apt install -y postgresql postgresql-contrib
+    ```
+  </Tab>
+  
+  <Tab title="Windows (WSL2)">
+    ```bash
+    # Install WSL2 first, then follow Ubuntu instructions
+    wsl --install
+    ```
+  </Tab>
+</Tabs>
+
+## Docker Setup (Recommended)
+
+```bash
+# Install Docker Desktop
+# Visit: https://www.docker.com/products/docker-desktop
+
+# Start services
+docker-compose up -d
+```
+
+This starts:
+- PostgreSQL (port 5432)
+- MinIO (port 9000)
+- Redis (port 6379)
+
+## Manual Setup
+
+### PostgreSQL
+
+```bash
+# Create database
+createdb wryft
+
+# Run migrations
+for f in backend/migrations/*.sql; do
+  psql -d wryft -f "$f"
+done
+```
+
+### MinIO
+
+```bash
+# Run setup script
+./setup-minio.sh
+```
+
+### Redis (Optional)
+
+```bash
+# Install Redis
+brew install redis  # macOS
+sudo apt install redis-server  # Ubuntu
+
+# Start Redis
+redis-server
+```
+
+## Environment Configuration
+
+### Backend (.env)
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+Edit `backend/.env`:
+```env
+DATABASE_URL=postgresql://postgres:password@localhost/wryft
+REDIS_URL=redis://localhost:6379
+S3_ENDPOINT=http://localhost:9000
+S3_ACCESS_KEY=minioadmin
+S3_SECRET_KEY=minioadmin
+S3_BUCKET=wryft
+```
+
+### Frontend (.env)
+
+```bash
+cd wryft-web
+cp .env.example .env
+```
+
+Edit `wryft-web/.env`:
+```env
+VITE_API_URL=http://localhost:3001/api
+VITE_WS_URL=ws://localhost:3001
+```
+
+## Verify Installation
+
+```bash
+# Check Node.js
+node --version  # Should be 18+
+
+# Check Rust
+rustc --version  # Should be 1.70+
+
+# Check PostgreSQL
+psql --version  # Should be 14+
+
+# Check Docker
+docker --version
+docker-compose --version
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Port already in use">
+    Change ports in `.env` files or stop conflicting services
+  </Accordion>
+  
+  <Accordion title="Database connection failed">
+    Verify PostgreSQL is running: `pg_isready`
+  </Accordion>
+  
+  <Accordion title="Rust compilation errors">
+    Update Rust: `rustup update`
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<Card title="Quickstart" icon="rocket" href="/quickstart">
+  Start the application
+</Card>

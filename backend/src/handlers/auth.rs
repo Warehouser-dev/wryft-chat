@@ -80,6 +80,9 @@ pub async fn register(
             email: payload.email,
             username: payload.username,
             discriminator,
+            is_premium: false,
+            premium_since: None,
+            premium_expires_at: None,
         },
     }))
 }
@@ -89,7 +92,7 @@ pub async fn login(
     Json(payload): Json<LoginRequest>,
 ) -> Result<Json<AuthResponse>, StatusCode> {
     let user = sqlx::query!(
-        "SELECT id, email, username, discriminator, password_hash FROM users WHERE email = $1",
+        "SELECT id, email, username, discriminator, password_hash, is_premium, premium_since, premium_expires_at FROM users WHERE email = $1",
         payload.email
     )
     .fetch_optional(&state.db)
@@ -111,6 +114,9 @@ pub async fn login(
             email: user.email,
             username: user.username,
             discriminator: user.discriminator,
+            is_premium: user.is_premium.unwrap_or(false),
+            premium_since: user.premium_since.map(|dt| dt.to_rfc3339()),
+            premium_expires_at: user.premium_expires_at.map(|dt| dt.to_rfc3339()),
         },
     }))
 }
@@ -126,12 +132,16 @@ fn create_token(user_id: &Uuid) -> Result<String, StatusCode> {
         exp: expiration,
     };
 
-    let secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "secret".to_string());
+    // Use the shared JWT secret from main.rs
+    let secret = crate::JWT_SECRET;
     
     encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret(secret.as_bytes()),
+        &EncodingKey::from_secret(secret),
     )
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
+    .map_err(|e| {
+        eprintln!("JWT Error: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })
 }

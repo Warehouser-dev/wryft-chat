@@ -1,0 +1,86 @@
+---
+title: 'Quickstart'
+description: 'Get Wryft Chat running locally in 5 minutes'
+---
+
+## Prerequisites
+
+<CardGroup cols={3}>
+  <Card title="Node.js 18+" icon="node-js">
+    JavaScript runtime
+  </Card>
+  <Card title="Rust 1.70+" icon="rust">
+    Backend language
+  </Card>
+  <Card title="PostgreSQL 14+" icon="database">
+    Database
+  </Card>
+</CardGroup>
+
+## Setup
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/Warehouser-dev/wryft-chat.git
+    cd wryft-chat
+    ```
+  </Step>
+
+  <Step title="Start services">
+    ```bash
+    docker-compose up -d postgres minio redis
+    ```
+  </Step>
+
+  <Step title="Setup database">
+    ```bash
+    createdb wryft
+    for f in backend/migrations/*.sql; do psql -d wryft -f "$f"; done
+    ```
+  </Step>
+
+  <Step title="Configure environment">
+    ```bash
+    # Backend
+    cp backend/.env.example backend/.env
+    
+    # Frontend
+    cp wryft-web/.env.example wryft-web/.env
+    ```
+  </Step>
+
+  <Step title="Start backend">
+    ```bash
+    cd backend
+    cargo run
+    ```
+  </Step>
+
+  <Step title="Start frontend">
+    ```bash
+    cd wryft-web
+    npm install
+    npm run dev
+    ```
+  </Step>
+</Steps>
+
+## Access the App
+
+Open your browser to [http://localhost:5173](http://localhost:5173)
+
+<Note>
+  Default backend runs on port 3001, frontend on port 5173
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Features" icon="star" href="/features/messaging">
+    Explore all features
+  </Card>
+  <Card title="Deployment" icon="rocket" href="/deployment/docker">
+    Deploy to production
+  </Card>
+</CardGroup>

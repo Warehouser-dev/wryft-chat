@@ -1,0 +1,115 @@
+---
+title: 'Messaging'
+description: 'Real-time messaging with reactions, typing indicators, and more'
+---
+
+## Overview
+
+Wryft Chat provides real-time messaging with WebSocket connections for instant delivery.
+
+## Features
+
+<CardGroup cols={2}>
+  <Card title="Real-time Delivery" icon="bolt">
+    Messages appear instantly via WebSocket
+  </Card>
+  <Card title="Reactions" icon="face-smile">
+    React to messages with emoji
+  </Card>
+  <Card title="Typing Indicators" icon="keyboard">
+    See when others are typing
+  </Card>
+  <Card title="Message Editing" icon="pen">
+    Edit messages after sending
+  </Card>
+</CardGroup>
+
+## Sending Messages
+
+Messages can be sent in channels or direct messages:
+
+```javascript
+// Send a message
+POST /api/messages/:channel_id
+{
+  "content": "Hello world!",
+  "attachments": []
+}
+```
+
+## Message Features
+
+### Reactions
+
+Add emoji reactions to any message:
+
+```javascript
+POST /api/messages/:message_id/reactions
+{
+  "emoji": "👍"
+}
+```
+
+### Editing
+
+Edit your own messages:
+
+```javascript
+PATCH /api/messages/:channel_id/:message_id
+{
+  "content": "Updated message"
+}
+```
+
+### Deleting
+
+Delete your own messages:
+
+```javascript
+DELETE /api/messages/:channel_id/:message_id
+```
+
+## Attachments
+
+Upload files with messages:
+
+- Images (JPG, PNG, GIF, WebP)
+- Videos (MP4, WebM)
+- Documents (PDF, TXT)
+- Max size: 25MB
+
+## Typing Indicators
+
+Show when you're typing:
+
+```javascript
+POST /api/channels/:channel_id/typing
+```
+
+Automatically cleared after 5 seconds of inactivity.
+
+## WebSocket Events
+
+Real-time updates via WebSocket:
+
+```javascript
+{
+  "type": "message",
+  "data": {
+    "id": "...",
+    "content": "Hello!",
+    "author": {...}
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Servers" icon="server" href="/features/servers">
+    Learn about servers and channels
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/messages">
+    View full API documentation
+  </Card>
+</CardGroup>

@@ -1,0 +1,131 @@
+---
+title: 'Servers & Channels'
+description: 'Organize conversations with Discord-like server structure'
+---
+
+## Overview
+
+Servers (guilds) are communities with multiple channels for organized conversations.
+
+## Server Features
+
+<CardGroup cols={2}>
+  <Card title="Text Channels" icon="message">
+    Organized text conversations
+  </Card>
+  <Card title="Voice Channels" icon="microphone">
+    Real-time voice communication
+  </Card>
+  <Card title="Categories" icon="folder">
+    Group channels together
+  </Card>
+  <Card title="Permissions" icon="shield">
+    Role-based access control
+  </Card>
+</CardGroup>
+
+## Creating a Server
+
+```javascript
+POST /api/guilds
+{
+  "name": "My Server",
+  "icon": "https://...",
+  "is_public": false
+}
+```
+
+## Channels
+
+### Text Channels
+
+Create organized text channels:
+
+```javascript
+POST /api/guilds/:guild_id/channels
+{
+  "name": "general",
+  "type": "text",
+  "category_id": null
+}
+```
+
+### Voice Channels
+
+Create voice channels:
+
+```javascript
+POST /api/guilds/:guild_id/channels
+{
+  "name": "Voice Chat",
+  "type": "voice"
+}
+```
+
+## Categories
+
+Group channels into categories:
+
+```javascript
+POST /api/guilds/:guild_id/categories
+{
+  "name": "Text Channels",
+  "position": 0
+}
+```
+
+## Permissions
+
+### Channel Permissions
+
+Set permissions per channel:
+
+```javascript
+POST /api/guilds/:guild_id/channels/:channel_id/permissions
+{
+  "role_id": "...",
+  "allow": ["VIEW_CHANNEL", "SEND_MESSAGES"],
+  "deny": ["MANAGE_MESSAGES"]
+}
+```
+
+### Available Permissions
+
+- `VIEW_CHANNEL` - See the channel
+- `SEND_MESSAGES` - Send messages
+- `MANAGE_MESSAGES` - Delete others' messages
+- `MANAGE_CHANNELS` - Edit channel settings
+- `MANAGE_GUILD` - Edit server settings
+- `KICK_MEMBERS` - Kick members
+- `BAN_MEMBERS` - Ban members
+
+## Invites
+
+Create invite links:
+
+```javascript
+POST /api/guilds/:guild_id/invites
+{
+  "max_uses": 10,
+  "expires_at": "2024-12-31T23:59:59Z"
+}
+```
+
+## Server Discovery
+
+Public servers appear in discovery:
+
+```javascript
+GET /api/guilds/public
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Roles" icon="user-shield" href="/features/servers#permissions">
+    Learn about role permissions
+  </Card>
+  <Card title="Voice" icon="microphone" href="/features/voice">
+    Set up voice channels
+  </Card>
+</CardGroup>

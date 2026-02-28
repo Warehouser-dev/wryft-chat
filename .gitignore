@@ -1,15 +1,27 @@
 # Dependencies
 node_modules/
 package-lock.json
+wryft-web/node_modules/
+wryft-web/package-lock.json
 
 # Environment variables
 .env
+.env.local
+.env.production
+.env.production.local
 backend/.env
+backend/.env.production
+wryft-web/.env
+wryft-web/.env.local
+wryft-web/.env.production
+wryft-web/.env.production.local
 
 # Build outputs
 dist/
 build/
 backend/target/
+wryft-web/dist/
+wryft-web/build/
 
 # Rust
 Cargo.lock
@@ -28,7 +40,16 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+logs/
 
 # Database
 *.db
 *.sqlite
+*.sql
+
+# Docker
+docker-compose.override.yml
+
+# Backups
+backup_*.sql
+*.backup

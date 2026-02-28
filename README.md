@@ -1,66 +1,61 @@
-# Wryft - Discord Alternative built for fun!
+# Wryft Chat
 
-A privacy-focused chat platform built with React and Rust.
-
-<img width="1920" height="907" alt="Screenshot 2026-02-15 at 13 27 14" src="https://github.com/user-attachments/assets/f1bfb022-2034-426b-8eaa-7587f0811483" />
+Modern real-time chat platform built with React and Rust.
 
 ## Features
 
-- Real-time messaging with WebSockets
-- Server/Guild system with channels
-- User profiles and member management
-- Server invites
-- No ID verification required
-- Freedom of speech focus
+- 💬 Real-time messaging
+- 🎮 Discord-like servers & channels
+- 👥 Friends system
+- 🔊 Voice channels
+- 🔐 Secure authentication
+- 📁 File uploads
+- ⭐ Premium features
+
+## Quick Start
+
+```bash
+# Clone
+git clone https://github.com/Warehouser-dev/wryft-chat.git
+cd wryft-chat
+
+# Start services
+docker-compose up -d
+
+# Setup database
+createdb wryft
+for f in backend/migrations/*.sql; do psql -d wryft -f "$f"; done
+
+# Start backend
+cd backend && cargo run
+
+# Start frontend (new terminal)
+cd wryft-web && npm install && npm run dev
+```
+
+Open http://localhost:5173
+
+## Documentation
+
+Full documentation at [docs.wryft.chat](https://docs.wryft.chat) (or run `mintlify dev` in the `docs/` folder)
 
 ## Tech Stack
 
-**Frontend:**
-- React + Vite
-- React Router
-- Lucide React icons
+- **Frontend**: React, Vite, WebSocket
+- **Backend**: Rust (Axum), PostgreSQL, Redis
+- **Storage**: MinIO (S3-compatible)
 
-**Backend:** 
+## Project Structure
 
-- Rust + Axum
-- PostgreSQL
-- WebSockets
-- JWT authentication
-
-## Setup
-
-### Backend
-
-```bash
-cd backend
-cargo run
 ```
-
-### Frontend
-
-```bash
-npm install
-npm run dev
-```
-
-### Database
-
-Create PostgreSQL database:
-```bash
-createdb wryft
-psql -d wryft -f backend/migrations/001_init.sql
-```
-
-## Environment Variables
-
-Create `backend/.env`:
-```
-JWT_SECRET=your-secret-key
-PORT=3001
-DATABASE_URL=postgresql://username@localhost/wryft
+wryft-chat/
+├── backend/       # Rust API
+├── wryft-web/     # React frontend
+├── homepage/      # Landing page
+├── docs/          # Mintlify docs
+└── docker-compose.yml
 ```
 
 ## License
 
-MIT
-# wryft-chat
+See [LICENSE](LICENSE)

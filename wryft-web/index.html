@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wryft Chat</title>
+    <link rel="shortcut icon" href="wryftchaticon.png" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/twemoji@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Disable right-click context menu only on non-interactive elements
+      document.addEventListener('contextmenu', (e) => {
+        // Allow context menu on elements with data-context-menu attribute
+        if (e.target.closest('[data-context-menu]')) {
+          return;
+        }
+        e.preventDefault();
+      });
+    </script>
+  </body>
+</html>

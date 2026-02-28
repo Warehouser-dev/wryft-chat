@@ -1,0 +1,68 @@
+{
+  "name": "Wryft Chat",
+  "logo": {
+    "dark": "/logo/dark.png",
+    "light": "/logo/light.png",
+    "href": "https://wryft.chat"
+  },
+  "favicon": "/favicon.png",
+  "colors": {
+    "primary": "#5865F2",
+    "light": "#7289DA",
+    "dark": "#5865F2",
+    "anchors": {
+      "from": "#5865F2",
+      "to": "#7289DA"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/Warehouser-dev/wryft-chat"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Get Started",
+    "url": "https://wryft.chat"
+  },
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": [
+        "introduction",
+        "quickstart",
+        "installation"
+      ]
+    },
+    {
+      "group": "Features",
+      "pages": [
+        "features/messaging",
+        "features/servers",
+        "features/friends",
+        "features/voice",
+        "features/premium"
+      ]
+    },
+    {
+      "group": "Deployment",
+      "pages": [
+        "deployment/docker",
+        "deployment/production",
+        "deployment/environment"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "api/authentication",
+        "api/messages",
+        "api/guilds",
+        "api/users"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "github": "https://github.com/Warehouser-dev/wryft-chat"
+  }
+}

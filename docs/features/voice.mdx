@@ -1,0 +1,125 @@
+---
+title: 'Voice Channels'
+description: 'Real-time voice communication in servers'
+---
+
+## Overview
+
+Voice channels enable real-time audio communication within servers.
+
+## Features
+
+<CardGroup cols={2}>
+  <Card title="Voice Chat" icon="microphone">
+    Real-time audio communication
+  </Card>
+  <Card title="Push to Talk" icon="hand">
+    Optional push-to-talk mode
+  </Card>
+  <Card title="Voice Activity" icon="waveform">
+    Automatic voice detection
+  </Card>
+  <Card title="User List" icon="users">
+    See who's in the channel
+  </Card>
+</CardGroup>
+
+## Joining Voice Channels
+
+Join a voice channel:
+
+```javascript
+POST /api/voice/:channel_id/join
+```
+
+The server returns connection details for WebRTC.
+
+## Leaving Voice Channels
+
+Leave the current voice channel:
+
+```javascript
+POST /api/voice/:channel_id/leave
+```
+
+## Voice Status
+
+See who's in a voice channel:
+
+```javascript
+GET /api/guilds/:guild_id/voice
+```
+
+Returns list of users in each voice channel with:
+- User ID
+- Channel ID
+- Muted status
+- Deafened status
+- Join time
+
+## Voice Settings
+
+### Mute/Unmute
+
+Toggle your microphone:
+
+```javascript
+POST /api/voice/:channel_id/mute
+POST /api/voice/:channel_id/unmute
+```
+
+### Deafen/Undeafen
+
+Toggle audio output:
+
+```javascript
+POST /api/voice/:channel_id/deafen
+POST /api/voice/:channel_id/undeafen
+```
+
+## Permissions
+
+Voice channel permissions:
+- `VIEW_CHANNEL` - See the voice channel
+- `CONNECT` - Join the voice channel
+- `SPEAK` - Speak in the channel
+- `MUTE_MEMBERS` - Mute other members
+- `DEAFEN_MEMBERS` - Deafen other members
+- `MOVE_MEMBERS` - Move members to other channels
+
+## WebRTC Connection
+
+Voice uses WebRTC for peer-to-peer audio:
+
+1. Join voice channel via API
+2. Receive WebRTC connection details
+3. Establish peer connections
+4. Stream audio
+
+## Heartbeat
+
+Keep voice connection alive:
+
+```javascript
+POST /api/voice/:channel_id/heartbeat
+```
+
+Send every 30 seconds while connected.
+
+## Voice Indicators
+
+Real-time voice activity indicators show:
+- Who's speaking (green ring)
+- Who's muted (red microphone)
+- Who's deafened (red headphones)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Servers" icon="server" href="/features/servers">
+    Learn about server setup
+  </Card>
+  <Card title="Permissions" icon="shield" href="/features/servers#permissions">
+    Configure voice permissions
+  </Card>
+</CardGroup>

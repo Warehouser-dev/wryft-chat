@@ -22,6 +22,7 @@ pub struct UserInfo {
     pub username: String,
     pub discriminator: String,
     pub email: String,
+    pub avatar_url: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -34,11 +35,14 @@ pub struct DMMessage {
     pub text: String,
     pub edited_at: Option<String>,
     pub created_at: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub attachments: Option<Vec<crate::models::Attachment>>,
 }
 
 #[derive(Deserialize)]
 pub struct SendDMRequest {
     pub text: String,
+    pub attachments: Option<Vec<crate::models::SendAttachment>>,
 }
 
 #[derive(Deserialize)]
@@ -95,7 +99,7 @@ pub async fn get_or_create_dm(
 
     // Get other user info
     let other_user = sqlx::query!(
-        "SELECT id, username, discriminator, email FROM users WHERE id = $1",
+        "SELECT id, username, discriminator, email, avatar_url FROM users WHERE id = $1",
         other_id
     )
     .fetch_one(&state.db)
@@ -111,6 +115,7 @@ pub async fn get_or_create_dm(
             username: other_user.username,
             discriminator: other_user.discriminator,
             email: other_user.email,
+            avatar_url: other_user.avatar_url,
         },
     }))
 }
@@ -125,7 +130,7 @@ pub async fn get_user_dms(
     let dms = sqlx::query!(
         r#"
         SELECT dm.id, dm.user1_id, dm.user2_id,
-               u.id as other_id, u.username, u.discriminator, u.email
+               u.id as other_id, u.username, u.discriminator, u.email, u.avatar_url
         FROM direct_messages dm
         JOIN users u ON (
             CASE 
@@ -153,6 +158,7 @@ pub async fn get_user_dms(
                 username: dm.username,
                 discriminator: dm.discriminator,
                 email: dm.email,
+                avatar_url: dm.avatar_url,
             },
         })
         .collect();
@@ -196,17 +202,47 @@ pub async fn get_dm_messages(
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
+    // Fetch all attachments for these DM messages
+    let message_ids: Vec<Uuid> = messages.iter().map(|m| m.id).collect();
+    
+    let attachments = if !message_ids.is_empty() {
+        sqlx::query!(
+            "SELECT id, message_id, filename, file_url, file_type, file_size FROM dm_message_attachments WHERE message_id = ANY($1)",
+            &message_ids
+        )
+        .fetch_all(&state.db)
+        .await
+        .unwrap_or_default()
+    } else {
+        vec![]
+    };
+
     let result = messages
         .into_iter()
-        .map(|m| DMMessage {
-            id: m.id.to_string(),
-            dm_id: m.dm_id.to_string(),
-            author_id: m.author_id.to_string(),
-            author: m.username,
-            author_discriminator: m.discriminator,
-            text: m.text,
-            edited_at: m.edited_at.map(|t| t.to_rfc3339()),
-            created_at: m.created_at.unwrap().to_rfc3339(),
+        .map(|m| {
+            let msg_attachments: Vec<crate::models::Attachment> = attachments
+                .iter()
+                .filter(|a| a.message_id == m.id)
+                .map(|a| crate::models::Attachment {
+                    id: a.id,
+                    filename: a.filename.clone(),
+                    file_url: a.file_url.clone(),
+                    file_type: a.file_type.clone(),
+                    file_size: a.file_size,
+                })
+                .collect();
+
+            DMMessage {
+                id: m.id.to_string(),
+                dm_id: m.dm_id.to_string(),
+                author_id: m.author_id.to_string(),
+                author: m.username,
+                author_discriminator: m.discriminator,
+                text: m.text,
+                edited_at: m.edited_at.map(|t| t.to_rfc3339()),
+                created_at: m.created_at.unwrap().to_rfc3339(),
+                attachments: if msg_attachments.is_empty() { None } else { Some(msg_attachments) },
+            }
         })
         .collect();
 
@@ -237,6 +273,8 @@ pub async fn send_dm_message(
 
     let message_id = Uuid::new_v4();
     
+    let mut tx = state.db.begin().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
     sqlx::query!(
         "INSERT INTO dm_messages (id, dm_id, author_id, text) VALUES ($1, $2, $3, $4)",
         message_id,
@@ -244,9 +282,39 @@ pub async fn send_dm_message(
         user_id,
         payload.text
     )
-    .execute(&state.db)
+    .execute(&mut *tx)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let mut saved_attachments = Vec::new();
+
+    if let Some(attachments) = payload.attachments {
+        for attachment in attachments {
+            let attachment_id = Uuid::new_v4();
+            sqlx::query!(
+                "INSERT INTO dm_message_attachments (id, message_id, filename, file_url, file_type, file_size) VALUES ($1, $2, $3, $4, $5, $6)",
+                attachment_id,
+                message_id,
+                attachment.filename,
+                attachment.file_url,
+                attachment.file_type,
+                attachment.file_size
+            )
+            .execute(&mut *tx)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            
+            saved_attachments.push(crate::models::Attachment {
+                id: attachment_id,
+                filename: attachment.filename.clone(),
+                file_url: attachment.file_url.clone(),
+                file_type: attachment.file_type.clone(),
+                file_size: attachment.file_size,
+            });
+        }
+    }
+
+    tx.commit().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     // Get user info
     let user = sqlx::query!(
@@ -257,6 +325,28 @@ pub async fn send_dm_message(
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
+    // Broadcast DM notification to the recipient's user-specific channel
+    let other_user_id = if dm.user1_id == user_id { dm.user2_id } else { dm.user1_id };
+    
+    let dm_notification = serde_json::json!({
+        "type": "dm_message",
+        "id": message_id.to_string(),
+        "dm_id": dm_id,
+        "author_id": user_id.to_string(),
+        "author": format!("{}#{}", user.username, user.discriminator),
+        "content": payload.text,
+        "timestamp": chrono::Utc::now().to_rfc3339(),
+        "attachments": saved_attachments,
+    });
+    
+    let notification_str = dm_notification.to_string();
+    
+    // Broadcast to the recipient's user-specific channel for notifications
+    let recipient_channel = format!("user-{}", other_user_id);
+    let ws_state = state.ws_state.clone();
+    let tx_recipient = ws_state.get_or_create_channel(&recipient_channel).await;
+    let _ = tx_recipient.send(notification_str);
+
     Ok(Json(DMMessage {
         id: message_id.to_string(),
         dm_id: dm_id,
@@ -266,6 +356,7 @@ pub async fn send_dm_message(
         text: payload.text,
         edited_at: None,
         created_at: chrono::Utc::now().to_rfc3339(),
+        attachments: if saved_attachments.is_empty() { None } else { Some(saved_attachments) },
     }))
 }
 

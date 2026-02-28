@@ -23,11 +23,11 @@ fn extract_user_id(headers: &HeaderMap) -> Result<Uuid, StatusCode> {
         .strip_prefix("Bearer ")
         .ok_or(StatusCode::UNAUTHORIZED)?;
 
-    let secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "secret".to_string());
+    let secret = crate::JWT_SECRET;
     
     let token_data = decode::<Claims>(
         token,
-        &DecodingKey::from_secret(secret.as_bytes()),
+        &DecodingKey::from_secret(secret),
         &Validation::default(),
     )
     .map_err(|_| StatusCode::UNAUTHORIZED)?;
@@ -88,7 +88,7 @@ pub async fn get_invite_info(
 
     // Get guild info
     let guild = sqlx::query!(
-        "SELECT id, name, icon FROM guilds WHERE id = $1",
+        "SELECT id, name, icon, icon_url FROM guilds WHERE id = $1",
         invite.guild_id
     )
     .fetch_one(&state.db)
@@ -123,6 +123,7 @@ pub async fn get_invite_info(
         guild_id: guild.id,
         guild_name: guild.name,
         guild_icon: guild.icon,
+        guild_icon_url: guild.icon_url,
         member_count: member_count.count.unwrap_or(0) as i32,
         is_member,
     }))
@@ -184,7 +185,7 @@ pub async fn join_guild(
 
     // Get guild info
     let guild = sqlx::query!(
-        "SELECT id, name, owner_id, icon, created_at FROM guilds WHERE id = $1",
+        "SELECT id, name, owner_id, icon, created_at, banner_url, icon_url FROM guilds WHERE id = $1",
         invite.guild_id
     )
     .fetch_one(&state.db)
@@ -197,6 +198,8 @@ pub async fn join_guild(
         owner_id: guild.owner_id,
         icon: guild.icon,
         created_at: guild.created_at.map(|dt| dt.to_rfc3339()).unwrap_or_else(|| chrono::Utc::now().to_rfc3339()),
+        banner_url: guild.banner_url,
+        icon_url: guild.icon_url,
     }))
 }
 

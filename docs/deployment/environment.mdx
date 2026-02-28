@@ -1,0 +1,228 @@
+---
+title: 'Environment Variables'
+description: 'Complete reference for all environment variables'
+---
+
+## Backend Environment Variables
+
+Configure in `backend/.env`
+
+### Database
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DATABASE_URL` | Yes | - | PostgreSQL connection string |
+| `DATABASE_MAX_CONNECTIONS` | No | 20 | Max database connections |
+| `DATABASE_MIN_CONNECTIONS` | No | 5 | Min database connections |
+
+**Example:**
+```env
+DATABASE_URL=postgresql://postgres:password@localhost:5432/wryft
+DATABASE_MAX_CONNECTIONS=20
+DATABASE_MIN_CONNECTIONS=5
+```
+
+### Redis (Optional)
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `REDIS_URL` | No | - | Redis connection string |
+
+**Example:**
+```env
+REDIS_URL=redis://localhost:6379
+```
+
+<Note>
+  Redis is optional but recommended for production. Improves performance by caching user sessions and guild data.
+</Note>
+
+### Storage (MinIO/S3)
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `S3_ENDPOINT` | Yes | - | MinIO/S3 endpoint URL |
+| `S3_ACCESS_KEY` | Yes | - | Access key ID |
+| `S3_SECRET_KEY` | Yes | - | Secret access key |
+| `S3_BUCKET` | Yes | - | Bucket name |
+| `S3_REGION` | No | us-east-1 | AWS region |
+
+**Example:**
+```env
+S3_ENDPOINT=http://localhost:9000
+S3_ACCESS_KEY=minioadmin
+S3_SECRET_KEY=minioadmin
+S3_BUCKET=wryft
+S3_REGION=us-east-1
+```
+
+### Server
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `PORT` | No | 3001 | Backend server port |
+| `ALLOWED_ORIGINS` | No | * | CORS allowed origins (comma-separated) |
+| `JWT_SECRET` | Yes | - | Secret key for JWT tokens |
+
+**Example:**
+```env
+PORT=3001
+ALLOWED_ORIGINS=https://wryft.chat,https://www.wryft.chat
+JWT_SECRET=your-super-secret-key-change-this-in-production
+```
+
+<Warning>
+  In production, set `ALLOWED_ORIGINS` to your domain and use a strong random `JWT_SECRET`
+</Warning>
+
+## Frontend Environment Variables
+
+Configure in `wryft-web/.env`
+
+### API Configuration
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `VITE_API_URL` | Yes | - | Backend API URL |
+| `VITE_WS_URL` | Yes | - | WebSocket URL |
+
+**Example:**
+```env
+VITE_API_URL=http://localhost:3001/api
+VITE_WS_URL=ws://localhost:3001
+```
+
+**Production Example:**
+```env
+VITE_API_URL=https://api.wryft.chat/api
+VITE_WS_URL=wss://api.wryft.chat
+```
+
+## Docker Environment
+
+Configure in `docker-compose.yml` or `.env` file
+
+### PostgreSQL
+
+```env
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your-password
+POSTGRES_DB=wryft
+```
+
+### MinIO
+
+```env
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin
+```
+
+<Warning>
+  Change default MinIO credentials in production!
+</Warning>
+
+### Redis
+
+```env
+REDIS_PASSWORD=your-redis-password
+```
+
+## Environment Templates
+
+### Development
+
+**backend/.env**
+```env
+DATABASE_URL=postgresql://postgres:wryft2024@localhost:5432/wryft
+REDIS_URL=redis://localhost:6379
+S3_ENDPOINT=http://localhost:9000
+S3_ACCESS_KEY=minioadmin
+S3_SECRET_KEY=minioadmin
+S3_BUCKET=wryft
+PORT=3001
+JWT_SECRET=dev-secret-key-not-for-production
+```
+
+**wryft-web/.env**
+```env
+VITE_API_URL=http://localhost:3001/api
+VITE_WS_URL=ws://localhost:3001
+```
+
+### Production
+
+**backend/.env**
+```env
+DATABASE_URL=postgresql://wryft_user:STRONG_PASSWORD@db.example.com:5432/wryft
+REDIS_URL=redis://:REDIS_PASSWORD@redis.example.com:6379
+S3_ENDPOINT=https://s3.amazonaws.com
+S3_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE
+S3_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+S3_BUCKET=wryft-production
+S3_REGION=us-east-1
+PORT=3001
+ALLOWED_ORIGINS=https://wryft.chat,https://www.wryft.chat
+JWT_SECRET=RANDOM_64_CHARACTER_STRING_GENERATED_SECURELY
+```
+
+**wryft-web/.env**
+```env
+VITE_API_URL=https://api.wryft.chat/api
+VITE_WS_URL=wss://api.wryft.chat
+```
+
+## Security Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Strong Passwords" icon="lock">
+    Use random 32+ character passwords
+  </Card>
+  <Card title="JWT Secret" icon="key">
+    Generate with: `openssl rand -hex 32`
+  </Card>
+  <Card title="CORS" icon="shield">
+    Restrict to your domain in production
+  </Card>
+  <Card title="HTTPS" icon="shield-check">
+    Always use HTTPS in production
+  </Card>
+</CardGroup>
+
+## Generating Secrets
+
+```bash
+# JWT Secret
+openssl rand -hex 32
+
+# Database Password
+openssl rand -base64 32
+
+# MinIO Keys
+openssl rand -hex 20  # Access Key
+openssl rand -hex 40  # Secret Key
+```
+
+## Validation
+
+Check your configuration:
+
+```bash
+# Backend
+cd backend
+cargo check
+
+# Frontend
+cd wryft-web
+npm run build
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Docker Deployment" icon="docker" href="/deployment/docker">
+    Deploy with Docker
+  </Card>
+  <Card title="Production Guide" icon="rocket" href="/deployment/production">
+    Production best practices
+  </Card>
+</CardGroup>

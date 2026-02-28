@@ -1,0 +1,204 @@
+---
+title: 'Messages API'
+description: 'Send, edit, and delete messages'
+---
+
+## Get Messages
+
+Retrieve messages from a channel.
+
+```http
+GET /api/messages/:channel_id?limit=50&before=message_id
+```
+
+### Parameters
+
+- `channel_id` (required) - Channel UUID
+- `limit` (optional) - Number of messages (default: 50, max: 100)
+- `before` (optional) - Get messages before this message ID
+
+### Response
+
+```json
+[
+  {
+    "id": "msg-uuid",
+    "content": "Hello world!",
+    "author": {
+      "id": "user-uuid",
+      "username": "user123",
+      "avatar": "https://..."
+    },
+    "channel_id": "channel-uuid",
+    "created_at": "2024-01-01T00:00:00Z",
+    "edited_at": null,
+    "attachments": [],
+    "reactions": []
+  }
+]
+```
+
+## Send Message
+
+Send a new message to a channel.
+
+```http
+POST /api/messages/:channel_id
+Authorization: Bearer TOKEN
+```
+
+### Request Body
+
+```json
+{
+  "content": "Hello world!",
+  "attachments": []
+}
+```
+
+### Response
+
+```json
+{
+  "id": "msg-uuid",
+  "content": "Hello world!",
+  "author": {...},
+  "created_at": "2024-01-01T00:00:00Z"
+}
+```
+
+## Edit Message
+
+Edit your own message.
+
+```http
+PATCH /api/messages/:channel_id/:message_id
+Authorization: Bearer TOKEN
+```
+
+### Request Body
+
+```json
+{
+  "content": "Updated message"
+}
+```
+
+## Delete Message
+
+Delete your own message.
+
+```http
+DELETE /api/messages/:channel_id/:message_id
+Authorization: Bearer TOKEN
+```
+
+## Add Reaction
+
+React to a message with emoji.
+
+```http
+POST /api/messages/:message_id/reactions
+Authorization: Bearer TOKEN
+```
+
+### Request Body
+
+```json
+{
+  "emoji": "👍"
+}
+```
+
+## Remove Reaction
+
+Remove your reaction from a message.
+
+```http
+DELETE /api/messages/:message_id/reactions/:emoji
+Authorization: Bearer TOKEN
+```
+
+## Get Reactions
+
+Get all reactions for a message.
+
+```http
+GET /api/messages/:message_id/reactions
+```
+
+### Response
+
+```json
+[
+  {
+    "emoji": "👍",
+    "count": 5,
+    "users": [...]
+  }
+]
+```
+
+## Typing Indicator
+
+Show typing indicator in a channel.
+
+```http
+POST /api/channels/:channel_id/typing
+Authorization: Bearer TOKEN
+```
+
+Automatically cleared after 5 seconds.
+
+## WebSocket Events
+
+Real-time message updates via WebSocket:
+
+### New Message
+
+```json
+{
+  "type": "message",
+  "data": {
+    "id": "msg-uuid",
+    "content": "Hello!",
+    "author": {...}
+  }
+}
+```
+
+### Message Edited
+
+```json
+{
+  "type": "message_update",
+  "data": {
+    "id": "msg-uuid",
+    "content": "Updated",
+    "edited_at": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+### Message Deleted
+
+```json
+{
+  "type": "message_delete",
+  "data": {
+    "id": "msg-uuid",
+    "channel_id": "channel-uuid"
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Guilds API" icon="server" href="/api/guilds">
+    Manage servers and channels
+  </Card>
+  <Card title="Users API" icon="user" href="/api/users">
+    User profiles and settings
+  </Card>
+</CardGroup>
