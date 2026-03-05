@@ -1,5 +1,5 @@
+import React, { useState, useEffect } from 'react';
 import { X, Trash, FloppyDisk, Globe } from 'phosphor-react';
-import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { uploadBanner, uploadIcon } from '../utils/storage';
 import RolesManager from './RolesManager';

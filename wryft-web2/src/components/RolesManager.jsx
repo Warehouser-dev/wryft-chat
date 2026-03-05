@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trash, Shield, CaretRight } from 'phosphor-react';
 import { api } from '../services/api';
 import { PERMISSIONS, PERMISSION_NAMES, PERMISSION_DESCRIPTIONS, hasPermission, togglePermission } from '../utils/permissions';

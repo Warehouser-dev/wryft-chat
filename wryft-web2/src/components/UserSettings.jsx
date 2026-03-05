@@ -1,6 +1,6 @@
+import React, { useState, useEffect } from 'react';
 import { X, User, Bell, Shield, Palette, SignOut } from 'phosphor-react';
 import { SparklesIcon } from '@heroicons/react/24/solid';
-import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import PremiumModal from './PremiumModal';

@@ -1,5 +1,5 @@
+import React, { useState, useEffect } from 'react';
 import { Hash, Plus, Trash, SpeakerHigh, CaretDown, CaretRight, DotsThree, Lock } from 'phosphor-react';
-import { useState, useEffect } from 'react';
 import { config } from '../config';
 import { api } from '../services/api';
 import CreateChannelModal from './CreateChannelModal';

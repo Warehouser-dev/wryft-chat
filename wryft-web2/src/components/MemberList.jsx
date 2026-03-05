@@ -1,5 +1,5 @@
+import React, { useState, useEffect } from 'react';
 import { Crown, CaretDown } from 'phosphor-react';
-import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import UserProfile from './UserProfile';
 import { api } from '../services/api';

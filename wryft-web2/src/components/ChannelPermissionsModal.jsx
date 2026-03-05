@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash, Eye, ChatCircle, Wrench, Check, Minus, MagnifyingGlass, GridFour, List } from 'phosphor-react';
 import { api } from '../services/api';
 import '../App.css';

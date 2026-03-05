@@ -1,3 +1,4 @@
+import React from 'react';
 import { WarningCircle, ArrowSquareOut, ArrowsClockwise } from 'phosphor-react';
 
 function ConnectionBanner({ isConnected }) {

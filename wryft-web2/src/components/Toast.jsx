@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { CheckCircle, XCircle, Info, Warning } from 'phosphor-react';
 
 function Toast({ message, type = 'success', onClose, duration = 3000 }) {

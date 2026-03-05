@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FloppyDisk, X } from 'phosphor-react';
 
 function UnsavedChangesBar({ onSave, onReset, saving = false, isClosing = false }) {

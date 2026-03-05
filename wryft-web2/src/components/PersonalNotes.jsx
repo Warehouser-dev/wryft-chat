@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { DocumentTextIcon } from '@heroicons/react/24/solid';
 import MessageInput from './MessageInput';
 import Message from './Message';

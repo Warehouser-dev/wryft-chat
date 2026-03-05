@@ -1,3 +1,4 @@
+import React from 'react';
 import { Crown } from 'phosphor-react';
 
 function PremiumBadge({ size = 16, showTooltip = true }) {

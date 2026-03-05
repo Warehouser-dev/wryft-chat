@@ -1,5 +1,5 @@
+import React, { useEffect, useRef } from 'react';
 import { ArrowBendUpLeft, PencilSimple, Trash, Copy } from 'phosphor-react';
-import { useEffect, useRef } from 'react';
 
 function MessageContextMenu({ x, y, message, isOwn, onReply, onEdit, onDelete, onCopyText, onClose }) {
     const menuRef = useRef(null);

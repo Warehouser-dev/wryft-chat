@@ -1,5 +1,5 @@
+import React, { useState } from 'react';
 import { X, Crown, Check } from 'phosphor-react';
-import { useState } from 'react';
 
 function PremiumModal({ isOpen, onClose, currentUser }) {
   const [isClosing, setIsClosing] = useState(false);

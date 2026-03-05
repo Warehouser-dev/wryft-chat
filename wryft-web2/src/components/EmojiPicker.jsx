@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { MagnifyingGlass, Smiley, Sticker, Star, Clock, Plus, Image, CircleNotch } from 'phosphor-react';
 import { Emoji } from '../utils/twemoji.jsx';
 import { EMOJI_SHORTCODES } from '../utils/emojiShortcodes';

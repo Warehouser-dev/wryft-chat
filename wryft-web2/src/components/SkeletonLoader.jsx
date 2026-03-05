@@ -1,3 +1,5 @@
+import React from 'react';
+
 function SkeletonLoader({ type = 'message', count = 3 }) {
   if (type === 'message') {
     return (

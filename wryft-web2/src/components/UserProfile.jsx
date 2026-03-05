@@ -1,6 +1,6 @@
+import React, { useState, useEffect } from 'react';
 import { XMarkIcon, SparklesIcon } from '@heroicons/react/24/solid';
 import { CalendarIcon, EnvelopeIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
-import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import DefaultAvatar from './DefaultAvatar';

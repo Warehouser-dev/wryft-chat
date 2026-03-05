@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 function ColorPicker({ value, onChange }) {
   const [isOpen, setIsOpen] = useState(false);

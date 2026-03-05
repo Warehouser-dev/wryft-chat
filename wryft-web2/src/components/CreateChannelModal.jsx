@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { X, Hash, SpeakerHigh } from 'phosphor-react';
 
 function CreateChannelModal({ isOpen, onClose, onCreateChannel, onCreateCategory, type, categoryId = null }) {

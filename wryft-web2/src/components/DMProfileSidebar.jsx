@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { EllipsisVerticalIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import { api } from '../services/api';
 import UserProfile from './UserProfile';

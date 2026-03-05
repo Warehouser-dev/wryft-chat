@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { Hash, User, Phone, VideoCamera, MagnifyingGlass, ArrowDown, X, CaretLeft } from 'phosphor-react';
 import MessageInput from './MessageInput';
 import Message from './Message';

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Globe, Image as ImageIcon } from 'phosphor-react';
 
 function LinkPreview({ url }) {

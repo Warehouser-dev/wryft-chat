@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Plus, X, File as FileIcon, Smiley, ArrowBendUpLeft } from 'phosphor-react';
 import { unlockAudio } from '../utils/notifications';
 import { searchShortcodes, replaceShortcodes } from '../utils/emojiShortcodes';

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Smiley } from 'phosphor-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
