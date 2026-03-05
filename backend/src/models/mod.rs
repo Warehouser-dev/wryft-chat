@@ -6,7 +6,6 @@ pub struct User {
     pub id: Uuid,
     pub email: String,
     pub username: String,
-    pub discriminator: String,
     pub password_hash: String,
 }
 
@@ -39,7 +38,6 @@ pub struct Message {
     pub id: Uuid,
     pub channel: String,
     pub author: String,
-    pub author_discriminator: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub author_id: Option<String>,
     pub text: String,
@@ -53,7 +51,7 @@ pub struct Message {
 #[derive(Debug, Deserialize)]
 pub struct RegisterRequest {
     pub email: String,
-    pub username: String,
+    pub username: Option<String>,
     pub password: String,
 }
 
@@ -74,12 +72,15 @@ pub struct UserResponse {
     pub id: Uuid,
     pub email: String,
     pub username: String,
-    pub discriminator: String,
     pub is_premium: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub premium_since: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub premium_expires_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_admin: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub admin_level: Option<i32>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -94,7 +95,6 @@ pub struct SendAttachment {
 pub struct SendMessageRequest {
     pub text: String,
     pub author: String,
-    pub author_discriminator: String,
     pub attachments: Option<Vec<SendAttachment>>,
 }
 
@@ -125,7 +125,6 @@ pub struct GuildResponse {
 pub struct MemberResponse {
     pub id: Uuid,
     pub username: String,
-    pub discriminator: String,
     pub online: bool,
     pub status: String,
 }

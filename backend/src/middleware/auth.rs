@@ -26,10 +26,10 @@ pub async fn auth_middleware(
         .ok_or(StatusCode::UNAUTHORIZED)?;
 
     // Verify JWT token
-    let secret = crate::JWT_SECRET;
+    let secret = crate::jwt_secret();
     let token_data = decode::<Claims>(
         token,
-        &DecodingKey::from_secret(secret),
+        &DecodingKey::from_secret(&secret),
         &Validation::default(),
     )
     .map_err(|_| StatusCode::UNAUTHORIZED)?;

@@ -21,11 +21,11 @@ fn extract_user_id(headers: &HeaderMap) -> Result<Uuid, StatusCode> {
         .strip_prefix("Bearer ")
         .ok_or(StatusCode::UNAUTHORIZED)?;
 
-    let secret = crate::JWT_SECRET;
+    let secret = crate::jwt_secret();
     
     let token_data = decode::<Claims>(
         token,
-        &DecodingKey::from_secret(secret),
+        &DecodingKey::from_secret(&secret),
         &Validation::default(),
     )
     .map_err(|_| StatusCode::UNAUTHORIZED)?;
@@ -146,10 +146,10 @@ pub async fn leave_voice_channel(
             // Try to extract from body token
             if let Some(Json(req)) = body {
                 if let Some(token) = req.token {
-                    let secret = crate::JWT_SECRET;
+                    let secret = crate::jwt_secret();
                     let token_data = decode::<Claims>(
                         &token,
-                        &DecodingKey::from_secret(secret),
+                        &DecodingKey::from_secret(&secret),
                         &Validation::default(),
                     )
                     .map_err(|_| StatusCode::UNAUTHORIZED)?;

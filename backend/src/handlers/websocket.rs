@@ -55,6 +55,22 @@ impl WsState {
         }
     }
     
+    // Send message to specific user
+    pub async fn send_to_user(&self, user_id: &str, message: serde_json::Value) {
+        let channel_name = format!("user-{}", user_id);
+        let channels = self.channels.read().await;
+        
+        println!("🔍 Looking for channel: {}", channel_name);
+        println!("📋 Available channels: {:?}", channels.keys().collect::<Vec<_>>());
+        
+        if let Some(sender) = channels.get(&channel_name) {
+            println!("✅ Found channel, sending message. Receiver count: {}", sender.receiver_count());
+            let _ = sender.send(message.to_string());
+        } else {
+            println!("❌ Channel not found: {}", channel_name);
+        }
+    }
+    
     // Track user connection
     pub async fn track_connection(&self, user: &str) -> Result<(), String> {
         let mut connections = self.user_connections.write().await;
@@ -213,6 +229,30 @@ pub enum WsMessage {
         user_id: String,
         status: String,
     },
+    #[serde(rename = "webrtc_signal")]
+    WebRTCSignal {
+        from_user_id: String,
+        to_user_id: String,
+        signal_type: String,
+        signal_data: serde_json::Value,
+        channel_id: Option<String>,
+    },
+    #[serde(rename = "incoming_call")]
+    IncomingCall {
+        call_id: String,
+        caller_id: String,
+        call_type: String,
+    },
+    #[serde(rename = "call_response")]
+    CallResponse {
+        call_id: String,
+        accepted: bool,
+    },
+    #[serde(rename = "call_ended")]
+    CallEnded {
+        call_id: String,
+        ended_by: String,
+    },
 }
 
 pub async fn ws_handler(
@@ -256,6 +296,7 @@ async fn handle_socket(socket: WebSocket, state: AppState, channel: String, user
 
     // Handle incoming messages from this client
     let tx_clone = tx.clone();
+    let ws_state_clone = ws_state.clone();
     let _username_clone = username.clone();
     let channel_clone = channel.clone();
     let mut recv_task = tokio::spawn(async move {
@@ -266,6 +307,44 @@ async fn handle_socket(socket: WebSocket, state: AppState, channel: String, user
                 // Check message type
                 if let Some(msg_type) = ws_msg.get("type").and_then(|t| t.as_str()) {
                     println!("🔊 Message type: {}", msg_type);
+                    
+                    // Handle WebRTC signaling for DM calls
+                    if msg_type == "webrtc_signal" {
+                        if let Some(to_user_id) = ws_msg.get("to_user_id").and_then(|v| v.as_str()) {
+                            println!("📞 Routing WebRTC signal to user: {}", to_user_id);
+                            ws_state_clone.send_to_user(to_user_id, ws_msg.clone()).await;
+                            continue;
+                        }
+                    }
+                    
+                    // Handle incoming call notifications
+                    if msg_type == "incoming_call" {
+                        if let Some(callee_id) = ws_msg.get("callee_id").and_then(|v| v.as_str()) {
+                            println!("📞 Routing incoming call to user: {}", callee_id);
+                            ws_state_clone.send_to_user(callee_id, ws_msg.clone()).await;
+                            continue;
+                        }
+                    }
+                    
+                    // Handle call response
+                    if msg_type == "call_response" {
+                        // Route back to the caller
+                        if let Some(caller_id) = ws_msg.get("caller_id").and_then(|v| v.as_str()) {
+                            println!("📞 Routing call response to caller: {}", caller_id);
+                            ws_state_clone.send_to_user(caller_id, ws_msg.clone()).await;
+                            continue;
+                        }
+                    }
+                    
+                    // Handle call ended
+                    if msg_type == "call_ended" {
+                        // Broadcast to both users in the call
+                        if let Some(other_user_id) = ws_msg.get("other_user_id").and_then(|v| v.as_str()) {
+                            println!("📞 Routing call ended to user: {}", other_user_id);
+                            ws_state_clone.send_to_user(other_user_id, ws_msg.clone()).await;
+                            continue;
+                        }
+                    }
                     
                     if msg_type.starts_with("voice_") {
                         // For voice_heartbeat, don't broadcast

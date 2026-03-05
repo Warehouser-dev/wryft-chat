@@ -53,3 +53,20 @@ docker-compose.override.yml
 # Backups
 backup_*.sql
 *.backup
+
+# Temporary documentation and test files
+*_COMPLETE.md
+*_FIX.md
+*_SETUP.md
+*_PLAN.md
+*_READY.md
+*_WORKING.md
+*_SUMMARY.md
+*_INTEGRATION_*.md
+DEBUG_*.md
+debug_*.md
+test_*.md
+test_*.sh
+fix_*.md
+create_*.sql
+PHASE*.md

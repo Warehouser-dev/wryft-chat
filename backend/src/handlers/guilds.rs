@@ -21,11 +21,11 @@ fn extract_user_id(headers: &HeaderMap) -> Result<Uuid, StatusCode> {
         .strip_prefix("Bearer ")
         .ok_or(StatusCode::UNAUTHORIZED)?;
 
-    let secret = crate::JWT_SECRET;
+    let secret = crate::jwt_secret();
     
     let token_data = decode::<Claims>(
         token,
-        &DecodingKey::from_secret(secret),
+        &DecodingKey::from_secret(&secret),
         &Validation::default(),
     )
     .map_err(|_| StatusCode::UNAUTHORIZED)?;
@@ -204,7 +204,7 @@ pub async fn get_guild_members(
     
     let members = sqlx::query!(
         r#"
-        SELECT u.id, u.username, u.discriminator, u.email, up.status, up.last_seen
+        SELECT u.id, u.username, u.email, up.status, up.last_seen
         FROM users u
         INNER JOIN guild_members gm ON u.id = gm.user_id
         LEFT JOIN user_presence up ON u.id = up.user_id
@@ -234,7 +234,6 @@ pub async fn get_guild_members(
             MemberResponse {
                 id: m.id,
                 username: m.username.clone(),
-                discriminator: m.discriminator.clone(),
                 online: status == "online" || status == "focus" || status == "dnd" || status == "idle",
                 status,
             }

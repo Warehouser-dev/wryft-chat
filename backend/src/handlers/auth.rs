@@ -12,22 +12,6 @@ pub struct Claims {
     pub exp: usize,
 }
 
-fn generate_discriminator(existing: &[(String, String)], username: &str) -> String {
-    let mut discriminator = rand::random::<u16>() % 10000;
-    let mut attempts = 0;
-    
-    while attempts < 100 {
-        let disc_str = format!("{:04}", discriminator);
-        if !existing.iter().any(|(u, d)| u == username && d == &disc_str) {
-            return disc_str;
-        }
-        discriminator = rand::random::<u16>() % 10000;
-        attempts += 1;
-    }
-    
-    format!("{:04}", rand::random::<u16>() % 10000)
-}
-
 pub async fn register(
     State(state): State<AppState>,
     Json(payload): Json<RegisterRequest>,
@@ -42,29 +26,44 @@ pub async fn register(
         return Err(StatusCode::CONFLICT);
     }
 
-    // Get existing username/discriminator pairs
-    let existing_users = sqlx::query!("SELECT username, discriminator FROM users")
-        .fetch_all(&state.db)
+    // Validate and get username
+    let username = if let Some(provided_username) = payload.username {
+        // Validate username format (3-32 chars, alphanumeric + ._-)
+        if provided_username.len() < 3 || provided_username.len() > 32 {
+            return Err(StatusCode::BAD_REQUEST);
+        }
+        
+        if !provided_username.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '_' || c == '-') {
+            return Err(StatusCode::BAD_REQUEST);
+        }
+        
+        provided_username
+    } else {
+        // Generate temporary username if none provided
+        let uuid_str = Uuid::new_v4().to_string();
+        format!("user_{}", &uuid_str[..8])
+    };
+    
+    // Check if username is already taken
+    let username_exists = sqlx::query!("SELECT id FROM users WHERE username = $1", username)
+        .fetch_optional(&state.db)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    
-    let existing_pairs: Vec<(String, String)> = existing_users
-        .into_iter()
-        .map(|r| (r.username, r.discriminator))
-        .collect();
+
+    if username_exists.is_some() {
+        return Err(StatusCode::CONFLICT); // Username taken
+    }
 
     let password_hash = hash(payload.password, DEFAULT_COST)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let discriminator = generate_discriminator(&existing_pairs, &payload.username);
     let user_id = Uuid::new_v4();
 
     sqlx::query!(
-        "INSERT INTO users (id, email, username, discriminator, password_hash) VALUES ($1, $2, $3, $4, $5)",
+        "INSERT INTO users (id, email, username, password_hash) VALUES ($1, $2, $3, $4)",
         user_id,
         payload.email,
-        payload.username,
-        discriminator,
+        username,
         password_hash
     )
     .execute(&state.db)
@@ -78,11 +77,12 @@ pub async fn register(
         user: UserResponse {
             id: user_id,
             email: payload.email,
-            username: payload.username,
-            discriminator,
+            username: username.clone(),
             is_premium: false,
             premium_since: None,
             premium_expires_at: None,
+            is_admin: Some(false),
+            admin_level: Some(0),
         },
     }))
 }
@@ -91,17 +91,31 @@ pub async fn login(
     State(state): State<AppState>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<Json<AuthResponse>, StatusCode> {
+    std::fs::write("/tmp/wryft_login.log", format!("Login attempt: {}\n", payload.email)).ok();
+    
     let user = sqlx::query!(
-        "SELECT id, email, username, discriminator, password_hash, is_premium, premium_since, premium_expires_at FROM users WHERE email = $1",
+        "SELECT id, email, username, password_hash, is_premium, premium_since, premium_expires_at, is_banned, is_admin, admin_level FROM users WHERE email = $1",
         payload.email
     )
     .fetch_optional(&state.db)
     .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    .map_err(|e| {
+        eprintln!("Database error during login: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?
     .ok_or(StatusCode::UNAUTHORIZED)?;
 
+    // Check if user is banned
+    if user.is_banned.unwrap_or(false) {
+        eprintln!("Banned user attempted login: {}", payload.email);
+        return Err(StatusCode::FORBIDDEN);
+    }
+
     verify(&payload.password, &user.password_hash)
-        .map_err(|_| StatusCode::UNAUTHORIZED)?
+        .map_err(|e| {
+            eprintln!("Password verification error: {:?}", e);
+            StatusCode::UNAUTHORIZED
+        })?
         .then_some(())
         .ok_or(StatusCode::UNAUTHORIZED)?;
 
@@ -113,10 +127,11 @@ pub async fn login(
             id: user.id,
             email: user.email,
             username: user.username,
-            discriminator: user.discriminator,
             is_premium: user.is_premium.unwrap_or(false),
-            premium_since: user.premium_since.map(|dt| dt.to_rfc3339()),
-            premium_expires_at: user.premium_expires_at.map(|dt| dt.to_rfc3339()),
+            premium_since: user.premium_since.map(|dt| dt.to_string()),
+            premium_expires_at: user.premium_expires_at.map(|dt| dt.to_string()),
+            is_admin: user.is_admin,
+            admin_level: user.admin_level,
         },
     }))
 }
@@ -132,13 +147,13 @@ fn create_token(user_id: &Uuid) -> Result<String, StatusCode> {
         exp: expiration,
     };
 
-    // Use the shared JWT secret from main.rs
-    let secret = crate::JWT_SECRET;
+    // Use the shared JWT secret from environment
+    let secret = crate::jwt_secret();
     
     encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret(secret),
+        &EncodingKey::from_secret(&secret),
     )
     .map_err(|e| {
         eprintln!("JWT Error: {:?}", e);

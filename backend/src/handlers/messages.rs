@@ -9,7 +9,7 @@ pub async fn get_messages(
     Path(channel): Path<String>,
 ) -> Result<Json<Vec<Message>>, StatusCode> {
     let messages = sqlx::query!(
-        "SELECT id, channel, author, author_discriminator, author_id, text, timestamp, edited_at FROM messages WHERE channel = $1 AND deleted = false ORDER BY created_at ASC",
+        "SELECT id, channel, author, author_id, text, timestamp, edited_at FROM messages WHERE channel = $1 AND deleted = false ORDER BY created_at ASC",
         channel
     )
     .fetch_all(&state.db)
@@ -49,7 +49,6 @@ pub async fn get_messages(
             id: m.id,
             channel: m.channel,
             author: m.author,
-            author_discriminator: m.author_discriminator,
             author_id: m.author_id.map(|id| id.to_string()),
             text: m.text,
             timestamp: m.timestamp,
@@ -69,11 +68,10 @@ pub async fn send_message(
     let message_id = Uuid::new_v4();
     let timestamp = chrono::Utc::now().format("%I:%M %p").to_string();
 
-    // Get author_id from username and discriminator
+    // Get author_id from username
     let author_id = sqlx::query_scalar!(
-        "SELECT id FROM users WHERE username = $1 AND discriminator = $2",
-        payload.author,
-        payload.author_discriminator
+        "SELECT id FROM users WHERE username = $1",
+        payload.author
     )
     .fetch_optional(&state.db)
     .await
@@ -101,11 +99,10 @@ pub async fn send_message(
     let mut tx = state.db.begin().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     sqlx::query!(
-        "INSERT INTO messages (id, channel, author, author_discriminator, author_id, text, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+        "INSERT INTO messages (id, channel, author, author_id, text, timestamp) VALUES ($1, $2, $3, $4, $5, $6)",
         message_id,
         channel,
         payload.author,
-        payload.author_discriminator,
         Some(user_id),
         payload.text,
         timestamp
@@ -144,11 +141,26 @@ pub async fn send_message(
 
     tx.commit().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
+    // Track stats and award badges
+    let new_count = crate::stats::increment_stat(&state.db, &user_id, "messages_sent", 1).await.unwrap_or(0);
+    let awarded_badges = crate::handlers::badges::check_and_award_badges(&state, &user_id, "messages_sent", new_count).await.unwrap_or_default();
+    
+    // If badges were awarded, notify the user
+    if !awarded_badges.is_empty() {
+        let badge_notification = serde_json::json!({
+            "type": "badges_earned",
+            "badges": awarded_badges,
+        });
+        let user_channel = format!("user-{}", user_id);
+        let ws_state = state.ws_state.clone();
+        let tx_user = ws_state.get_or_create_channel(&user_channel).await;
+        let _ = tx_user.send(badge_notification.to_string());
+    }
+
     Ok(Json(Message {
         id: message_id,
         channel,
         author: payload.author,
-        author_discriminator: payload.author_discriminator,
         author_id: Some(user_id.to_string()),
         text: payload.text,
         timestamp,

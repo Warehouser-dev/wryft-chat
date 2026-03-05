@@ -30,7 +30,6 @@ pub struct UpdatePrivacySettingsRequest {
 pub struct UserProfile {
     pub id: String,
     pub username: String,
-    pub discriminator: String,
     pub email: String,
     pub avatar_url: Option<String>,
     pub about_me: Option<String>,
@@ -61,7 +60,7 @@ pub async fn get_user_profile(
     
     let user = sqlx::query!(
         r#"
-        SELECT id, username, discriminator, email, avatar_url, about_me, theme_config,
+        SELECT id, username, email, avatar_url, about_me, theme_config,
                is_premium, premium_since, premium_expires_at, banner_color, banner_color_secondary, banner_url,
                custom_status, custom_status_emoji, pronouns, timezone, created_at,
                allow_dms, allow_friend_requests, show_online_status, explicit_content_filter
@@ -77,7 +76,6 @@ pub async fn get_user_profile(
     Ok(Json(UserProfile {
         id: user.id.to_string(),
         username: user.username,
-        discriminator: user.discriminator,
         email: user.email,
         avatar_url: user.avatar_url,
         about_me: user.about_me,
@@ -153,7 +151,6 @@ pub struct MutualGuild {
 pub struct MutualFriend {
     pub id: String,
     pub username: String,
-    pub discriminator: String,
     pub avatar_url: Option<String>,
 }
 
@@ -201,7 +198,7 @@ pub async fn get_mutual_friends(
     
     let friends = sqlx::query!(
         r#"
-        SELECT DISTINCT u.id, u.username, u.discriminator, u.avatar_url
+        SELECT DISTINCT u.id, u.username, u.avatar_url
         FROM users u
         WHERE u.id IN (
             -- Get current user's friends
@@ -235,7 +232,6 @@ pub async fn get_mutual_friends(
     let mutual_friends = friends.into_iter().map(|f| MutualFriend {
         id: f.id.to_string(),
         username: f.username,
-        discriminator: f.discriminator,
         avatar_url: f.avatar_url,
     }).collect();
 
@@ -246,6 +242,11 @@ pub async fn get_mutual_friends(
 pub struct UpdateCustomStatusRequest {
     pub custom_status: Option<String>,
     pub custom_status_emoji: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct UpdateUsernameRequest {
+    pub username: String,
 }
 
 // Update custom status
@@ -297,4 +298,60 @@ pub async fn update_privacy_settings(
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(StatusCode::OK)
+}
+
+// Update username (now requires unique username)
+pub async fn update_username(
+    State(state): State<AppState>,
+    Path(user_id): Path<String>,
+    Json(payload): Json<UpdateUsernameRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let user_uuid = uuid::Uuid::parse_str(&user_id).map_err(|_| StatusCode::BAD_REQUEST)?;
+    
+    // Validate username format (3-32 chars, alphanumeric + ._-)
+    if payload.username.len() < 3 || payload.username.len() > 32 {
+        return Ok(Json(serde_json::json!({
+            "success": false,
+            "error": "Username must be between 3 and 32 characters"
+        })));
+    }
+    
+    if !payload.username.chars().all(|c: char| c.is_alphanumeric() || c == '.' || c == '_' || c == '-') {
+        return Ok(Json(serde_json::json!({
+            "success": false,
+            "error": "Username can only contain letters, numbers, dots, underscores, and hyphens"
+        })));
+    }
+    
+    // Check if username is already taken
+    let existing = sqlx::query!(
+        "SELECT id FROM users WHERE username = $1 AND id != $2",
+        payload.username,
+        user_uuid
+    )
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    
+    if existing.is_some() {
+        return Ok(Json(serde_json::json!({
+            "success": false,
+            "error": "This username is already taken"
+        })));
+    }
+    
+    // Update username
+    sqlx::query!(
+        "UPDATE users SET username = $1 WHERE id = $2",
+        payload.username,
+        user_uuid
+    )
+    .execute(&state.db)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    
+    Ok(Json(serde_json::json!({
+        "success": true,
+        "username": payload.username
+    })))
 }

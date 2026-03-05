@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod badges;
 pub mod messages;
 pub mod websocket;
 pub mod guilds;
@@ -16,3 +17,5 @@ pub mod audit_logs;
 pub mod emoji;
 pub mod uploads;
 pub mod files;
+pub mod admin;
+pub mod webrtc;

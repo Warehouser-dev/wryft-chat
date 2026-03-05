@@ -20,7 +20,6 @@ pub struct DirectMessage {
 pub struct UserInfo {
     pub id: String,
     pub username: String,
-    pub discriminator: String,
     pub email: String,
     pub avatar_url: Option<String>,
 }
@@ -31,7 +30,6 @@ pub struct DMMessage {
     pub dm_id: String,
     pub author_id: String,
     pub author: String,
-    pub author_discriminator: String,
     pub text: String,
     pub edited_at: Option<String>,
     pub created_at: String,
@@ -99,7 +97,7 @@ pub async fn get_or_create_dm(
 
     // Get other user info
     let other_user = sqlx::query!(
-        "SELECT id, username, discriminator, email, avatar_url FROM users WHERE id = $1",
+        "SELECT id, username, email, avatar_url FROM users WHERE id = $1",
         other_id
     )
     .fetch_one(&state.db)
@@ -113,7 +111,6 @@ pub async fn get_or_create_dm(
         other_user: UserInfo {
             id: other_user.id.to_string(),
             username: other_user.username,
-            discriminator: other_user.discriminator,
             email: other_user.email,
             avatar_url: other_user.avatar_url,
         },
@@ -130,7 +127,7 @@ pub async fn get_user_dms(
     let dms = sqlx::query!(
         r#"
         SELECT dm.id, dm.user1_id, dm.user2_id,
-               u.id as other_id, u.username, u.discriminator, u.email, u.avatar_url
+               u.id as other_id, u.username, u.email, u.avatar_url
         FROM direct_messages dm
         JOIN users u ON (
             CASE 
@@ -156,7 +153,6 @@ pub async fn get_user_dms(
             other_user: UserInfo {
                 id: dm.other_id.to_string(),
                 username: dm.username,
-                discriminator: dm.discriminator,
                 email: dm.email,
                 avatar_url: dm.avatar_url,
             },
@@ -190,7 +186,7 @@ pub async fn get_dm_messages(
     let messages = sqlx::query!(
         r#"
         SELECT m.id, m.dm_id, m.author_id, m.text, m.edited_at, m.created_at,
-               u.username, u.discriminator
+               u.username
         FROM dm_messages m
         JOIN users u ON m.author_id = u.id
         WHERE m.dm_id = $1 AND m.deleted = false
@@ -237,7 +233,6 @@ pub async fn get_dm_messages(
                 dm_id: m.dm_id.to_string(),
                 author_id: m.author_id.to_string(),
                 author: m.username,
-                author_discriminator: m.discriminator,
                 text: m.text,
                 edited_at: m.edited_at.map(|t| t.to_rfc3339()),
                 created_at: m.created_at.unwrap().to_rfc3339(),
@@ -316,9 +311,25 @@ pub async fn send_dm_message(
 
     tx.commit().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
+    // Track stats and award badges
+    let new_count = crate::stats::increment_stat(&state.db, &user_id, "dms_sent", 1).await.unwrap_or(0);
+    let awarded_badges = crate::handlers::badges::check_and_award_badges(&state, &user_id, "dms_sent", new_count).await.unwrap_or_default();
+    
+    // If badges were awarded, notify the user
+    if !awarded_badges.is_empty() {
+        let badge_notification = serde_json::json!({
+            "type": "badges_earned",
+            "badges": awarded_badges,
+        });
+        let user_channel = format!("user-{}", user_id);
+        let ws_state = state.ws_state.clone();
+        let tx_user = ws_state.get_or_create_channel(&user_channel).await;
+        let _ = tx_user.send(badge_notification.to_string());
+    }
+
     // Get user info
     let user = sqlx::query!(
-        "SELECT username, discriminator FROM users WHERE id = $1",
+        "SELECT username FROM users WHERE id = $1",
         user_id
     )
     .fetch_one(&state.db)
@@ -333,7 +344,7 @@ pub async fn send_dm_message(
         "id": message_id.to_string(),
         "dm_id": dm_id,
         "author_id": user_id.to_string(),
-        "author": format!("{}#{}", user.username, user.discriminator),
+        "author": user.username,
         "content": payload.text,
         "timestamp": chrono::Utc::now().to_rfc3339(),
         "attachments": saved_attachments,
@@ -352,7 +363,6 @@ pub async fn send_dm_message(
         dm_id: dm_id,
         author_id: user_id.to_string(),
         author: user.username,
-        author_discriminator: user.discriminator,
         text: payload.text,
         edited_at: None,
         created_at: chrono::Utc::now().to_rfc3339(),

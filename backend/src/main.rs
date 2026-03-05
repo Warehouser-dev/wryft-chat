@@ -4,6 +4,7 @@ mod cache;
 mod permissions;
 mod storage;
 mod middleware;
+mod stats;
 
 use axum::{
     routing::{get, post},
@@ -15,15 +16,15 @@ use axum::{
 use sqlx::postgres::PgPoolOptions;
 use tower_http::cors::{Any, CorsLayer};
 use axum::http::HeaderValue;
-use tower_governor::{
-    governor::GovernorConfigBuilder,
-    GovernorLayer,
-};
 use serde_json::json;
 use cache::RedisCache;
 
-// Shared JWT secret - must match the one in handlers/auth.rs
-pub const JWT_SECRET: &[u8] = b"my-secret-key-for-jwt-tokens-that-is-long-enough";
+// JWT secret loaded from environment variable
+pub fn jwt_secret() -> Vec<u8> {
+    std::env::var("JWT_SECRET")
+        .expect("JWT_SECRET must be set in .env file")
+        .into_bytes()
+}
 
 #[derive(Clone)]
 pub struct AppState {
@@ -91,25 +92,6 @@ async fn main() {
         storage,
     };
 
-    // Rate limiting configuration
-    // Allow 100 requests per minute per IP for general endpoints
-    let governor_conf = Box::new(
-        GovernorConfigBuilder::default()
-            .per_millisecond(60000) // 1 minute
-            .burst_size(100) // 100 requests per minute
-            .finish()
-            .unwrap(),
-    );
-
-    // Stricter rate limiting for auth endpoints (10 per minute)
-    let auth_governor_conf = Box::new(
-        GovernorConfigBuilder::default()
-            .per_millisecond(60000)
-            .burst_size(10)
-            .finish()
-            .unwrap(),
-    );
-
     let cors = if let Ok(allowed_origins) = std::env::var("ALLOWED_ORIGINS") {
         let origins: Vec<_> = allowed_origins
             .split(',')
@@ -120,8 +102,17 @@ async fn main() {
             println!("CORS restricted to: {}", allowed_origins);
             CorsLayer::new()
                 .allow_origin(origins)
-                .allow_methods(Any)
-                .allow_headers(Any)
+                .allow_methods([
+                    axum::http::Method::GET,
+                    axum::http::Method::POST,
+                    axum::http::Method::PATCH,
+                    axum::http::Method::DELETE,
+                    axum::http::Method::OPTIONS,
+                ])
+                .allow_headers([
+                    axum::http::header::CONTENT_TYPE,
+                    axum::http::header::AUTHORIZATION,
+                ])
                 .allow_credentials(true)
         } else {
             println!("Warning: ALLOWED_ORIGINS set but invalid, allowing all origins");
@@ -138,10 +129,11 @@ async fn main() {
             .allow_headers(Any)
     };
 
-    // Auth routes WITHOUT rate limiting (temporarily disabled for debugging)
+    // Auth routes WITHOUT rate limiting or auth
     let auth_routes = Router::new()
         .route("/api/auth/register", post(handlers::auth::register))
-        .route("/api/auth/login", post(handlers::auth::login));
+        .route("/api/auth/login", post(handlers::auth::login))
+        .with_state(state.clone());
 
     // File Uploads with authentication and rate limiting
     let upload_routes = Router::new()
@@ -154,8 +146,8 @@ async fn main() {
         .layer(axum_middleware::from_fn(middleware::auth::auth_middleware))
         .with_state(state.clone());
 
-    // Main app routes with general rate limiting
-    let app = Router::new()
+    // Protected routes with authentication (rate limiting removed for now - causing issues)
+    let protected_routes = Router::new()
         .route("/api/messages/:channel", get(handlers::messages::get_messages))
         .route("/api/messages/:channel", post(handlers::messages::send_message))
         .route("/api/messages/:channel/:message_id", axum::routing::patch(handlers::messages::edit_message))
@@ -212,10 +204,16 @@ async fn main() {
         .route("/api/dms/:user_id/:dm_id/messages/:message_id", axum::routing::delete(handlers::dms::delete_dm_message))
         .route("/api/users/:user_id", get(handlers::users::get_user_profile))
         .route("/api/users/:user_id/profile", axum::routing::patch(handlers::users::update_user_profile))
+        .route("/api/users/:user_id/username", axum::routing::patch(handlers::users::update_username))
         .route("/api/users/:user_id/status", axum::routing::patch(handlers::users::update_custom_status))
         .route("/api/users/:user_id/privacy", axum::routing::patch(handlers::users::update_privacy_settings))
         .route("/api/users/:current_user_id/mutual-guilds/:target_user_id", get(handlers::users::get_mutual_guilds))
         .route("/api/users/:current_user_id/mutual-friends/:target_user_id", get(handlers::users::get_mutual_friends))
+        // Badges & Achievements
+        .route("/api/users/:user_id/badges", get(handlers::badges::get_user_badges))
+        .route("/api/users/:user_id/stats", get(handlers::badges::get_user_stats))
+        .route("/api/users/:user_id/badge-progress", get(handlers::badges::get_badge_progress))
+        .route("/api/badges", get(handlers::badges::get_all_badges))
         // Reactions
         .route("/api/messages/:message_id/reactions", post(handlers::reactions::add_reaction))
         .route("/api/messages/:message_id/reactions/:emoji", axum::routing::delete(handlers::reactions::remove_reaction))
@@ -247,26 +245,40 @@ async fn main() {
         .route("/api/friends/block/:user_id", post(handlers::friends::block_user))
         .route("/api/friends/block/:user_id", axum::routing::delete(handlers::friends::unblock_user))
         .route("/api/friends/blocked", get(handlers::friends::get_blocked_users))
-        .route("/ws", get(handlers::websocket::ws_handler))
-        .merge(upload_routes)
-        .merge(auth_routes)
-        // Rate limiting temporarily disabled
-        // .layer(GovernorLayer {
-        //     config: Box::leak(governor_conf),
-        // })
-        .layer(cors.clone())
+        // Admin routes
+        .route("/api/admin/stats", get(handlers::admin::get_dashboard_stats))
+        .route("/api/admin/users", get(handlers::admin::get_users))
+        .route("/api/admin/users/:user_id/ban", post(handlers::admin::ban_user))
+        .route("/api/admin/users/:user_id/unban", post(handlers::admin::unban_user))
+        .route("/api/admin/users/:user_id", axum::routing::delete(handlers::admin::delete_user))
+        .route("/api/admin/guilds", get(handlers::admin::get_guilds))
+        .route("/api/admin/guilds/:guild_id", axum::routing::delete(handlers::admin::delete_guild))
+        // WebRTC signaling
+        .route("/api/webrtc/signal", post(handlers::webrtc::send_signal))
+        .route("/api/webrtc/call/initiate", post(handlers::webrtc::initiate_call))
+        .route("/api/webrtc/call/:call_id/respond", post(handlers::webrtc::respond_to_call))
+        .route("/api/webrtc/call/:call_id/end", post(handlers::webrtc::end_call))
+        .layer(axum_middleware::from_fn(middleware::auth::auth_middleware))
         .with_state(state.clone());
     
-    // Health check without rate limiting but with CORS
+    // WebSocket route without auth (has its own connection tracking)
+    let ws_routes = Router::new()
+        .route("/ws", get(handlers::websocket::ws_handler))
+        .with_state(state.clone());
+    
+    // Health check without rate limiting or auth
     let health_router = Router::new()
         .route("/api/health", get(health_check))
-        .layer(cors)
         .with_state(state);
     
-    // Merge all routes
+    // Merge all routes with CORS applied globally
     let final_app = Router::new()
         .merge(health_router)
-        .merge(app);
+        .merge(auth_routes)
+        .merge(upload_routes)
+        .merge(ws_routes)
+        .merge(protected_routes)
+        .layer(cors);
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "3001".to_string());
     let addr = format!("0.0.0.0:{}", port);

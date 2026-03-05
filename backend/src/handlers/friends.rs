@@ -21,11 +21,11 @@ fn extract_user_id(headers: &HeaderMap) -> Result<Uuid, StatusCode> {
         .strip_prefix("Bearer ")
         .ok_or(StatusCode::UNAUTHORIZED)?;
 
-    let secret = crate::JWT_SECRET;
+    let secret = crate::jwt_secret();
     
     let token_data = decode::<Claims>(
         token,
-        &DecodingKey::from_secret(secret),
+        &DecodingKey::from_secret(&secret),
         &Validation::default(),
     )
     .map_err(|_| StatusCode::UNAUTHORIZED)?;
@@ -38,7 +38,6 @@ pub struct FriendResponse {
     pub id: Uuid,
     pub user_id: Uuid,
     pub username: String,
-    pub discriminator: String,
     pub avatar_url: Option<String>,
     pub status: String,
     pub created_at: String,
@@ -47,7 +46,6 @@ pub struct FriendResponse {
 #[derive(Debug, Deserialize)]
 pub struct SendFriendRequestBody {
     pub username: String,
-    pub discriminator: String,
 }
 
 // Send a friend request
@@ -60,9 +58,8 @@ pub async fn send_friend_request(
 
     // Find the target user
     let target_user = sqlx::query!(
-        "SELECT id FROM users WHERE username = $1 AND discriminator = $2",
-        payload.username,
-        payload.discriminator
+        "SELECT id FROM users WHERE username = $1",
+        payload.username
     )
     .fetch_optional(&state.db)
     .await
@@ -119,7 +116,7 @@ pub async fn send_friend_request(
 
     // Get friend info
     let friend_info = sqlx::query!(
-        "SELECT username, discriminator, avatar_url FROM users WHERE id = $1",
+        "SELECT username, avatar_url FROM users WHERE id = $1",
         friend_id
     )
     .fetch_one(&state.db)
@@ -130,7 +127,6 @@ pub async fn send_friend_request(
         id: friendship_id,
         user_id: friend_id,
         username: friend_info.username,
-        discriminator: friend_info.discriminator,
         avatar_url: friend_info.avatar_url,
         status: "pending".to_string(),
         created_at: created_at.created_at.unwrap().to_rfc3339(),
@@ -238,7 +234,6 @@ pub async fn get_friends(
                 ELSE f.user_id
             END as friend_user_id,
             u.username,
-            u.discriminator,
             u.avatar_url,
             f.status,
             f.created_at
@@ -262,7 +257,6 @@ pub async fn get_friends(
             id: f.id,
             user_id: f.friend_user_id.unwrap(),
             username: f.username,
-            discriminator: f.discriminator,
             avatar_url: f.avatar_url,
             status: f.status,
             created_at: f.created_at.unwrap().to_rfc3339(),
@@ -285,7 +279,6 @@ pub async fn get_pending_requests(
             f.id,
             f.user_id,
             u.username,
-            u.discriminator,
             u.avatar_url,
             f.status,
             f.created_at
@@ -306,7 +299,6 @@ pub async fn get_pending_requests(
             id: f.id,
             user_id: f.user_id,
             username: f.username,
-            discriminator: f.discriminator,
             avatar_url: f.avatar_url,
             status: f.status,
             created_at: f.created_at.unwrap().to_rfc3339(),
@@ -329,7 +321,6 @@ pub async fn get_outgoing_requests(
             f.id,
             f.friend_id,
             u.username,
-            u.discriminator,
             u.avatar_url,
             f.status,
             f.created_at
@@ -350,7 +341,6 @@ pub async fn get_outgoing_requests(
             id: f.id,
             user_id: f.friend_id,
             username: f.username,
-            discriminator: f.discriminator,
             avatar_url: f.avatar_url,
             status: f.status,
             created_at: f.created_at.unwrap().to_rfc3339(),
@@ -443,7 +433,6 @@ pub async fn get_blocked_users(
             f.id,
             f.friend_id,
             u.username,
-            u.discriminator,
             u.avatar_url,
             f.status,
             f.created_at
@@ -464,7 +453,6 @@ pub async fn get_blocked_users(
             id: f.id,
             user_id: f.friend_id,
             username: f.username,
-            discriminator: f.discriminator,
             avatar_url: f.avatar_url,
             status: f.status,
             created_at: f.created_at.unwrap().to_rfc3339(),
