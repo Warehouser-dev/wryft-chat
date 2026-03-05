@@ -1,0 +1,70 @@
+{
+  "hash": "2987f686",
+  "configHash": "ff41f458",
+  "lockfileHash": "4cc784d0",
+  "browserHash": "5f1cdfc3",
+  "optimized": {
+    "@heroicons/react/24/outline": {
+      "src": "../../node_modules/@heroicons/react/24/outline/esm/index.js",
+      "file": "@heroicons_react_24_outline.js",
+      "fileHash": "76ebb909",
+      "needsInterop": false
+    },
+    "@heroicons/react/24/solid": {
+      "src": "../../node_modules/@heroicons/react/24/solid/esm/index.js",
+      "file": "@heroicons_react_24_solid.js",
+      "fileHash": "99bb8f38",
+      "needsInterop": false
+    },
+    "@tauri-apps/api/app": {
+      "src": "../../node_modules/@tauri-apps/api/app.js",
+      "file": "@tauri-apps_api_app.js",
+      "fileHash": "e8e2a33e",
+      "needsInterop": false
+    },
+    "@tauri-apps/plugin-notification": {
+      "src": "../../node_modules/@tauri-apps/plugin-notification/dist-js/index.js",
+      "file": "@tauri-apps_plugin-notification.js",
+      "fileHash": "f5c95474",
+      "needsInterop": false
+    },
+    "phosphor-react": {
+      "src": "../../node_modules/phosphor-react/dist/index.esm.js",
+      "file": "phosphor-react.js",
+      "fileHash": "009f3782",
+      "needsInterop": false
+    },
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "c14fdbc2",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "ba0c037b",
+      "needsInterop": true
+    },
+    "react-router-dom": {
+      "src": "../../node_modules/react-router-dom/dist/index.js",
+      "file": "react-router-dom.js",
+      "fileHash": "81c38f78",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-EL5H42U2": {
+      "file": "chunk-EL5H42U2.js"
+    },
+    "chunk-HCGKX5ED": {
+      "file": "chunk-HCGKX5ED.js"
+    },
+    "chunk-WNPTCGAH": {
+      "file": "chunk-WNPTCGAH.js"
+    },
+    "chunk-5WRI5ZAA": {
+      "file": "chunk-5WRI5ZAA.js"
+    }
+  }
+}
