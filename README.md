@@ -18,7 +18,7 @@ Modern real-time chat platform built with React and Rust.
 
 ## Documentation
 
-📚 **[View Full Documentation](https://wryft-143fa83c.mintlify.app/introduction)**
+📚 **[View Full Documentation](https://docs.wryft.org/introduction)**
 
 - [Installation Guide](https://wryft-143fa83c.mintlify.app/installation)
 - [API Reference](https://wryft-143fa83c.mintlify.app/api-reference)
